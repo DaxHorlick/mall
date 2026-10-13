@@ -17,7 +17,7 @@ export function ProductsPage() {
       title="商品列表"
       description="商品网格、筛选、排序和分页会在后续阶段实现。搜索框和分类入口已经可以把条件带到这里。"
       notes={notes}
-      actions={[{ label: '查看示例商品', to: '/products/demo' }]}
+      actions={[{ label: '查看示例商品', to: '/products/p-ink-circle' }]}
     />
   )
 }

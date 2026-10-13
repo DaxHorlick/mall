@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 560" fill="none">
+  <rect width="480" height="560" fill="#D6D3D1"/>
+  <path d="M140 96c18 36 48 46 100 46s82-16 100-46l58 22-28 72h-40v252H150V190h-40l-28-72 58-22z" fill="#292524"/>
+  <text x="240" y="286" text-anchor="middle" fill="#FAFAF9" font-family="Segoe UI, sans-serif" font-size="42" font-weight="700">XL</text>
+</svg>
