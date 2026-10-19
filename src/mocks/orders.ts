@@ -1,0 +1,96 @@
+import type { Order } from '../types/order.ts'
+
+/** 预置几笔本地 Mock 订单，便于用户中心 / 商家中心演示 */
+export const seedMockOrders: Order[] = [
+  {
+    id: 'ord-demo-1001',
+    isMock: true,
+    status: 'shipped',
+    items: [
+      {
+        productId: 'p-ink-circle',
+        name: 'Ink Circle Tee',
+        price: 129,
+        imageUrl: '/images/products/tee-ink.svg',
+        colorKey: 'black',
+        colorLabel: '黑色',
+        size: 'M',
+        quantity: 1,
+      },
+    ],
+    address: {
+      receiverName: '林墨',
+      phone: '13800138000',
+      address: '上海市徐汇区示例路 88 号',
+    },
+    goodsAmount: 129,
+    shippingFee: 10,
+    totalAmount: 139,
+    createdAt: '2026-03-20T10:20:00.000Z',
+    note: '本地模拟订单，非真实后端数据',
+  },
+  {
+    id: 'ord-demo-1002',
+    isMock: true,
+    status: 'paid',
+    items: [
+      {
+        productId: 'p-wave-line',
+        name: 'Wave Line Tee',
+        price: 139,
+        imageUrl: '/images/products/tee-wave.svg',
+        colorKey: 'navy',
+        colorLabel: '藏青',
+        size: 'L',
+        quantity: 2,
+      },
+      {
+        productId: 'p-plain-soft',
+        name: 'Soft Plain Tee',
+        price: 99,
+        imageUrl: '/images/products/tee-plain.svg',
+        colorKey: 'white',
+        colorLabel: '白色',
+        size: 'M',
+        quantity: 1,
+      },
+    ],
+    address: {
+      receiverName: '林墨',
+      phone: '13800138000',
+      address: '上海市徐汇区示例路 88 号',
+    },
+    goodsAmount: 377,
+    shippingFee: 0,
+    totalAmount: 377,
+    createdAt: '2026-03-28T15:40:00.000Z',
+    note: '本地模拟订单，非真实后端数据',
+  },
+  {
+    id: 'ord-demo-1003',
+    isMock: true,
+    status: 'completed',
+    items: [
+      {
+        productId: 'p-star-limited',
+        name: 'Star Limited Tee',
+        price: 189,
+        imageUrl: '/images/products/tee-limited.svg',
+        colorKey: 'black',
+        colorLabel: '黑色',
+        size: 'S',
+        quantity: 1,
+      },
+    ],
+    address: {
+      receiverName: '林墨',
+      phone: '13800138000',
+      address: '杭州市西湖区示例大道 12 号',
+    },
+    goodsAmount: 189,
+    shippingFee: 10,
+    totalAmount: 199,
+    createdAt: '2026-02-18T09:10:00.000Z',
+    note: '本地模拟订单，非真实后端数据',
+  },
+]

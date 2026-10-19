@@ -7,6 +7,7 @@ import {
   primaryNav,
   productCategories,
 } from '../../constants/navigation.ts'
+import { useCartStore } from '../../stores/cart.ts'
 
 function linkClass(isActive: boolean) {
   return isActive
@@ -19,9 +20,25 @@ export function SiteHeader() {
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const [menuOpen, setMenuOpen] = useState(false)
+  const cartQuantity = useCartStore((state) =>
+    state.items.reduce((sum, item) => sum + item.quantity, 0),
+  )
   const keywordFromUrl = searchParams.get('keyword') ?? ''
   const category = searchParams.get('category') ?? ''
   const onProductList = location.pathname === '/products'
+
+  const keepListFilters = (next: URLSearchParams) => {
+    if (!onProductList) {
+      return
+    }
+
+    for (const key of ['category', 'minPrice', 'maxPrice', 'sort'] as const) {
+      const value = searchParams.get(key)
+      if (value) {
+        next.set(key, value)
+      }
+    }
+  }
 
   const submitSearch = (value: string) => {
     const next = new URLSearchParams()
@@ -31,9 +48,7 @@ export function SiteHeader() {
       next.set('keyword', trimmed)
     }
 
-    if (onProductList && category) {
-      next.set('category', category)
-    }
+    keepListFilters(next)
 
     const query = next.toString()
     navigate(query ? `/products?${query}` : '/products')
@@ -45,6 +60,15 @@ export function SiteHeader() {
 
     if (keyword) {
       next.set('keyword', keyword)
+    }
+
+    if (onProductList) {
+      for (const filterKey of ['minPrice', 'maxPrice', 'sort'] as const) {
+        const value = searchParams.get(filterKey)
+        if (value) {
+          next.set(filterKey, value)
+        }
+      }
     }
 
     if (key !== 'all') {
@@ -137,8 +161,18 @@ export function SiteHeader() {
           <NavLink to="/login" className={({ isActive }) => linkClass(isActive)}>
             登录
           </NavLink>
-          <NavLink to="/cart" className={({ isActive }) => linkClass(isActive)}>
+          <NavLink
+            to="/cart"
+            className={({ isActive }) =>
+              `${linkClass(isActive)} inline-flex items-center gap-1`
+            }
+          >
             购物车
+            {cartQuantity > 0 ? (
+              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-stone-950 px-1.5 text-[11px] font-medium text-white">
+                {cartQuantity > 99 ? '99+' : cartQuantity}
+              </span>
+            ) : null}
           </NavLink>
           <button
             type="button"
