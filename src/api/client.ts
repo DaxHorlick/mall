@@ -1,12 +1,16 @@
+import type { ApiBody } from '../types/auth.ts'
+
 const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '')
 
 export class ApiError extends Error {
   readonly status: number
+  readonly code: string
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code = 'UNKNOWN') {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.code = code
   }
 }
 
@@ -25,12 +29,24 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   const response = await fetch(`${baseUrl}${path}`, {
     ...init,
+    credentials: 'include',
     headers,
   })
 
-  if (!response.ok) {
-    throw new ApiError(response.status, `请求失败（${response.status}）`)
+  let body: ApiBody<T> | null = null
+  try {
+    body = (await response.json()) as ApiBody<T>
+  } catch {
+    body = null
   }
 
-  return (await response.json()) as T
+  if (!response.ok || !body || body.code !== 'OK') {
+    throw new ApiError(
+      response.status,
+      body?.message || `请求失败（${response.status}）`,
+      body?.code ?? 'UNKNOWN',
+    )
+  }
+
+  return body.data as T
 }

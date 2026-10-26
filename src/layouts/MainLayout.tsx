@@ -2,9 +2,11 @@ import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { SiteFooter } from '../components/layout/SiteFooter.tsx'
 import { SiteHeader } from '../components/layout/SiteHeader.tsx'
+import { useSessionBootstrap } from '../hooks/useSessionBootstrap.ts'
 
 export function MainLayout() {
   const { pathname } = useLocation()
+  useSessionBootstrap()
 
   useEffect(() => {
     window.scrollTo(0, 0)

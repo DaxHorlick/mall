@@ -7,6 +7,7 @@ import {
   primaryNav,
   productCategories,
 } from '../../constants/navigation.ts'
+import { useAuthStore } from '../../stores/auth.ts'
 
 function linkClass(isActive: boolean) {
   return isActive
@@ -19,6 +20,7 @@ export function SiteHeader() {
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const [menuOpen, setMenuOpen] = useState(false)
+  const user = useAuthStore((s) => s.user)
   const keywordFromUrl = searchParams.get('keyword') ?? ''
   const category = searchParams.get('category') ?? ''
   const onProductList = location.pathname === '/products'
@@ -134,9 +136,19 @@ export function SiteHeader() {
         </nav>
 
         <div className="col-start-3 row-start-1 flex items-center gap-3 justify-self-end lg:col-start-4">
-          <NavLink to="/login" className={({ isActive }) => linkClass(isActive)}>
-            登录
-          </NavLink>
+          {user ? (
+            <NavLink
+              to="/profile"
+              className={({ isActive }) => linkClass(isActive)}
+              title={user.nickname}
+            >
+              {user.nickname}
+            </NavLink>
+          ) : (
+            <NavLink to="/login" className={({ isActive }) => linkClass(isActive)}>
+              登录
+            </NavLink>
+          )}
           <NavLink to="/cart" className={({ isActive }) => linkClass(isActive)}>
             购物车
           </NavLink>
