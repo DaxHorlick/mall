@@ -1,20 +1,15 @@
 import { StyleProvider } from '@ant-design/cssinjs'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { App as AntdApp, ConfigProvider } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
+import { useState } from 'react'
 import { RouterProvider } from 'react-router-dom'
+import { createAppQueryClient } from './api/queryClient.ts'
 import { router } from './router/index.tsx'
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-})
-
 export default function App() {
+  const [queryClient] = useState(() => createAppQueryClient())
+
   return (
     <QueryClientProvider client={queryClient}>
       <StyleProvider layer>
