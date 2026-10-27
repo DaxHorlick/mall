@@ -1,6 +1,7 @@
 import { request } from './client.ts'
 import { isMockMode, mockDelay } from './config.ts'
 import { mockCurrentUser } from '../mocks/user.ts'
+import type { AuthUser, UpdateProfileRequest } from '../types/auth.ts'
 import type { CurrentUser } from '../types/user.ts'
 
 /**
@@ -13,6 +14,24 @@ export async function fetchCurrentUser(): Promise<CurrentUser> {
     return mockCurrentUser
   }
 
-  // TODO(backend): Go 用户资料接口尚未实现，且未接入真实登录
+  // TODO(backend): 商城演示用的扩展资料接口尚未实现。登录态以 /v1/auth/me 为准。
   return request<CurrentUser>('/users/me')
+}
+
+/** 只提交有改动的字段。不能传 id、status 等只读字段。 */
+export function updateProfile(payload: UpdateProfileRequest) {
+  const body: UpdateProfileRequest = {}
+
+  if (payload.nickname !== undefined) {
+    body.nickname = payload.nickname
+  }
+
+  if (payload.avatar_url !== undefined) {
+    body.avatar_url = payload.avatar_url
+  }
+
+  return request<AuthUser>('/v1/users/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
 }

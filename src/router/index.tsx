@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom'
+import { RequireAuth } from '../components/auth/RequireAuth.tsx'
 import { MainLayout } from '../layouts/MainLayout.tsx'
 import { LoginPage } from '../pages/auth/login.tsx'
 import { RegisterPage } from '../pages/auth/register.tsx'
@@ -30,16 +31,21 @@ export const router = createBrowserRouter([
       { path: '/marketplace', element: <MarketplacePage /> },
       { path: '/creators/:id', element: <CreatorPage /> },
       { path: '/cart', element: <CartPage /> },
-      { path: '/checkout', element: <CheckoutPage /> },
-      { path: '/orders', element: <OrdersPage /> },
-      { path: '/orders/:id', element: <OrderDetailPage /> },
-      { path: '/profile', element: <ProfilePage /> },
-      { path: '/my-designs', element: <MyDesignsPage /> },
-      { path: '/my-store', element: <MyStorePage /> },
-      { path: '/seller/products', element: <SellerProductsPage /> },
-      { path: '/seller/orders', element: <SellerOrdersPage /> },
       { path: '/login', element: <LoginPage /> },
       { path: '/register', element: <RegisterPage /> },
+      {
+        element: <RequireAuth />,
+        children: [
+          { path: '/checkout', element: <CheckoutPage /> },
+          { path: '/orders', element: <OrdersPage /> },
+          { path: '/orders/:id', element: <OrderDetailPage /> },
+          { path: '/profile', element: <ProfilePage /> },
+          { path: '/my-designs', element: <MyDesignsPage /> },
+          { path: '/my-store', element: <MyStorePage /> },
+          { path: '/seller/products', element: <SellerProductsPage /> },
+          { path: '/seller/orders', element: <SellerOrdersPage /> },
+        ],
+      },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

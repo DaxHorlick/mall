@@ -1,42 +1,50 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { fetchCurrentUser } from '../api/auth.ts'
-import { ApiError } from '../api/client.ts'
+import { ApiError, isAccountDisabled } from '../api/client.ts'
 import { useAuthStore } from '../stores/auth.ts'
 
-/** 用 Cookie 会话拉取当前用户；未登录（401 等）时清空本地 user。 */
+/**
+ * 启动和刷新时用 Cookie 向 /auth/me 确认登录态。
+ * 401 视为未登录；503 或网络失败保留内存中的用户，不跳转循环。
+ */
 export function useSessionBootstrap() {
-  const setUser = useAuthStore((s) => s.setUser)
-  const clearUser = useAuthStore((s) => s.clearUser)
-  const started = useRef(false)
+  const bootstrapNonce = useAuthStore((s) => s.bootstrapNonce)
+  const setAuthenticated = useAuthStore((s) => s.setAuthenticated)
+  const setAnonymous = useAuthStore((s) => s.setAnonymous)
+  const setUnavailable = useAuthStore((s) => s.setUnavailable)
 
   useEffect(() => {
-    if (started.current) {
-      return
-    }
-    started.current = true
-
     let cancelled = false
 
     ;(async () => {
       try {
         const user = await fetchCurrentUser()
         if (!cancelled) {
-          setUser(user)
+          setAuthenticated(user)
         }
       } catch (err) {
         if (cancelled) {
           return
         }
-        if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
-          clearUser()
+
+        if (err instanceof ApiError && err.status === 401) {
+          setAnonymous()
           return
         }
-        // 网络或其它错误：保留现有内存态，不强行登出
+
+        if (isAccountDisabled(err)) {
+          setAnonymous()
+          return
+        }
+
+        const message =
+          err instanceof ApiError ? err.message : '服务暂时不可用'
+        setUnavailable(message)
       }
     })()
 
     return () => {
       cancelled = true
     }
-  }, [clearUser, setUser])
+  }, [bootstrapNonce, setAnonymous, setAuthenticated, setUnavailable])
 }

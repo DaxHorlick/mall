@@ -1,10 +1,17 @@
-import { App, Button, Form, Input, Segmented } from 'antd'
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { App, Button, Form, Input, Segmented, Spin } from 'antd'
+import { useRef, useState } from 'react'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { register } from '../../api/auth.ts'
 import { ApiError } from '../../api/client.ts'
 import { useAuthStore } from '../../stores/auth.ts'
-import type { IdentityType } from '../../types/auth.ts'
+import type { AuthLocationState, IdentityType } from '../../types/auth.ts'
+import {
+  normalizeIdentifier,
+  safeReturnPath,
+  validateIdentifier,
+  validateNickname,
+  validatePassword,
+} from '../../utils/auth.ts'
 
 type RegisterFormValues = {
   nickname: string
@@ -12,22 +19,21 @@ type RegisterFormValues = {
   password: string
 }
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const PHONE_RE = /^(?:\+?86|0086)?1[3-9]\d{9}$/
-
-function passwordByteLength(value: string) {
-  return new TextEncoder().encode(value).length
-}
-
 export function RegisterPage() {
-  const navigate = useNavigate()
+  const location = useLocation()
   const { message } = App.useApp()
-  const setUser = useAuthStore((s) => s.setUser)
+  const status = useAuthStore((s) => s.status)
+  const setAuthenticated = useAuthStore((s) => s.setAuthenticated)
   const [form] = Form.useForm<RegisterFormValues>()
   const [identityType, setIdentityType] = useState<IdentityType>('email')
   const [submitting, setSubmitting] = useState(false)
   const [rateLimited, setRateLimited] = useState(false)
   const [conflict, setConflict] = useState(false)
+  const [createdWithoutSession, setCreatedWithoutSession] = useState(false)
+  const submittingRef = useRef(false)
+  const returnPath = safeReturnPath(
+    (location.state as AuthLocationState | null)?.from,
+  )
 
   const switchIdentityType = (next: IdentityType) => {
     setIdentityType(next)
@@ -37,6 +43,11 @@ export function RegisterPage() {
   }
 
   const onFinish = async (values: RegisterFormValues) => {
+    if (submittingRef.current || rateLimited) {
+      return
+    }
+
+    submittingRef.current = true
     setSubmitting(true)
     setConflict(false)
 
@@ -44,12 +55,11 @@ export function RegisterPage() {
       const user = await register({
         nickname: values.nickname.trim(),
         identity_type: identityType,
-        identifier: values.identifier.trim(),
+        identifier: normalizeIdentifier(identityType, values.identifier),
         password: values.password,
       })
-      setUser(user)
+      setAuthenticated(user)
       message.success('注册成功')
-      navigate('/', { replace: true })
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 409 || err.code === 'CONFLICT') {
@@ -60,10 +70,10 @@ export function RegisterPage() {
           message.error(err.message)
         } else if (
           err.status === 503 &&
-          err.message.includes('账号已创建，会话暂时不可用')
+          err.message === '账号已创建，会话暂时不可用，请稍后登录'
         ) {
+          setCreatedWithoutSession(true)
           message.warning(err.message)
-          navigate('/login', { replace: true })
         } else {
           message.error(err.message)
         }
@@ -71,12 +81,25 @@ export function RegisterPage() {
         message.error('注册失败，请稍后重试')
       }
     } finally {
+      submittingRef.current = false
       setSubmitting(false)
     }
   }
 
+  if (status === 'unknown') {
+    return (
+      <div className="mx-auto flex min-h-[calc(100dvh-4.5rem)] max-w-6xl items-center justify-center px-5 py-20">
+        <Spin size="large" tip="正在确认登录状态…" />
+      </div>
+    )
+  }
+
+  if (status === 'authenticated') {
+    return <Navigate to={returnPath} replace />
+  }
+
   return (
-    <section className="mx-auto max-w-6xl px-5 py-16 md:px-8 md:py-20">
+    <section className="mx-auto min-h-[calc(100dvh-4.5rem)] max-w-6xl px-5 py-16 md:px-8 md:py-20">
       <div className="mx-auto max-w-md">
         <p className="text-xs font-medium tracking-[0.22em] text-stone-500">
           账户
@@ -84,13 +107,14 @@ export function RegisterPage() {
         <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
           注册
         </h1>
-        <p className="mt-4 text-sm leading-6 text-stone-600">
-          支持邮箱或手机号注册，成功后将自动登录。本阶段无需验证码。
+        <p className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+          当前注册不会校验收据真实性。注册成功后会直接登录。
         </p>
 
         <div className="mt-8">
           <Segmented
             block
+            disabled={submitting || rateLimited || createdWithoutSession}
             value={identityType}
             options={[
               { label: '邮箱注册', value: 'email' },
@@ -106,7 +130,7 @@ export function RegisterPage() {
           className="mt-6"
           requiredMark={false}
           onFinish={onFinish}
-          disabled={submitting || rateLimited}
+          disabled={submitting || rateLimited || createdWithoutSession}
         >
           <Form.Item
             label="昵称"
@@ -115,14 +139,14 @@ export function RegisterPage() {
               { required: true, message: '请输入昵称' },
               {
                 validator: (_, value: string) => {
-                  const trimmed = value?.trim() ?? ''
-                  if (!trimmed) {
-                    return Promise.reject(new Error('请输入昵称'))
+                  if (!value) {
+                    return Promise.resolve()
                   }
-                  if (trimmed.length > 64) {
-                    return Promise.reject(new Error('昵称长度需为 1 到 64 个字符'))
-                  }
-                  return Promise.resolve()
+
+                  const error = validateNickname(value)
+                  return error
+                    ? Promise.reject(new Error(error))
+                    : Promise.resolve()
                 },
               },
             ]}
@@ -141,18 +165,14 @@ export function RegisterPage() {
               },
               {
                 validator: (_, value: string) => {
-                  const trimmed = value?.trim() ?? ''
-                  if (!trimmed) {
+                  if (!value) {
                     return Promise.resolve()
                   }
-                  if (identityType === 'email') {
-                    if (!EMAIL_RE.test(trimmed)) {
-                      return Promise.reject(new Error('邮箱格式不正确'))
-                    }
-                  } else if (!PHONE_RE.test(trimmed)) {
-                    return Promise.reject(new Error('手机号格式不正确'))
-                  }
-                  return Promise.resolve()
+
+                  const error = validateIdentifier(identityType, value)
+                  return error
+                    ? Promise.reject(new Error(error))
+                    : Promise.resolve()
                 },
               },
             ]}
@@ -165,6 +185,7 @@ export function RegisterPage() {
                   : '11 位大陆手机号'
               }
               autoComplete={identityType === 'email' ? 'email' : 'tel'}
+              maxLength={identityType === 'email' ? 128 : 32}
             />
           </Form.Item>
 
@@ -178,15 +199,11 @@ export function RegisterPage() {
                   if (!value) {
                     return Promise.resolve()
                   }
-                  if (value.length < 8) {
-                    return Promise.reject(new Error('密码至少 8 个字符'))
-                  }
-                  if (passwordByteLength(value) > 72) {
-                    return Promise.reject(
-                      new Error('密码不超过 72 字节（中文等多字节字符请注意长度）'),
-                    )
-                  }
-                  return Promise.resolve()
+
+                  const error = validatePassword(value)
+                  return error
+                    ? Promise.reject(new Error(error))
+                    : Promise.resolve()
                 },
               },
             ]}
@@ -202,7 +219,11 @@ export function RegisterPage() {
           {conflict && (
             <p className="mb-4 text-sm text-stone-600">
               该账号已注册，可{' '}
-              <Link to="/login" className="font-medium text-stone-950 underline">
+              <Link
+                to="/login"
+                state={location.state}
+                className="font-medium text-stone-950 underline"
+              >
                 去登录
               </Link>
             </p>
@@ -214,13 +235,27 @@ export function RegisterPage() {
             </p>
           )}
 
+          {createdWithoutSession ? (
+            <p className="mb-4 text-sm text-amber-800">
+              账号已创建，但会话暂时不可用。请稍后
+              <Link
+                to="/login"
+                state={location.state}
+                className="mx-1 font-medium text-stone-950 underline"
+              >
+                去登录
+              </Link>
+              ，不要重复注册。
+            </p>
+          ) : null}
+
           <Button
             type="primary"
             htmlType="submit"
             size="large"
             block
             loading={submitting}
-            disabled={rateLimited}
+            disabled={rateLimited || createdWithoutSession}
           >
             注册并登录
           </Button>
@@ -228,7 +263,11 @@ export function RegisterPage() {
 
         <p className="mt-6 text-center text-sm text-stone-500">
           已有账号？{' '}
-          <Link to="/login" className="font-medium text-stone-950 underline">
+          <Link
+            to="/login"
+            state={location.state}
+            className="font-medium text-stone-950 underline"
+          >
             去登录
           </Link>
         </p>

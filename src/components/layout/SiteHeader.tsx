@@ -9,6 +9,7 @@ import {
 } from '../../constants/navigation.ts'
 import { useAuthStore } from '../../stores/auth.ts'
 import { useCartStore } from '../../stores/cart.ts'
+import { useLogout } from '../../hooks/useLogout.ts'
 
 function linkClass(isActive: boolean) {
   return isActive
@@ -22,6 +23,8 @@ export function SiteHeader() {
   const [searchParams] = useSearchParams()
   const [menuOpen, setMenuOpen] = useState(false)
   const user = useAuthStore((s) => s.user)
+  const status = useAuthStore((s) => s.status)
+  const { logout, pending: logoutPending } = useLogout()
   const cartQuantity = useCartStore((state) =>
     state.items.reduce((sum, item) => sum + item.quantity, 0),
   )
@@ -160,14 +163,38 @@ export function SiteHeader() {
         </nav>
 
         <div className="col-start-3 row-start-1 flex items-center gap-3 justify-self-end lg:col-start-4">
-          {user ? (
-            <NavLink
-              to="/profile"
-              className={({ isActive }) => linkClass(isActive)}
-              title={user.nickname}
+          {status === 'unknown' ? (
+            <span className="inline-block h-5 w-10" aria-hidden="true" />
+          ) : user ? (
+            <Dropdown
+              menu={{
+                items: [
+                  { key: 'profile', label: '个人中心' },
+                  {
+                    key: 'logout',
+                    label: '退出登录',
+                    disabled: logoutPending,
+                  },
+                ],
+                onClick: ({ key }) => {
+                  if (key === 'profile') {
+                    navigate('/profile')
+                  }
+                  if (key === 'logout') {
+                    void logout()
+                  }
+                },
+              }}
+              trigger={['click']}
             >
-              {user.nickname}
-            </NavLink>
+              <button
+                type="button"
+                className="max-w-32 cursor-pointer truncate bg-transparent p-0 text-sm font-medium text-stone-950"
+                title={user.nickname}
+              >
+                {user.nickname}
+              </button>
+            </Dropdown>
           ) : (
             <NavLink to="/login" className={({ isActive }) => linkClass(isActive)}>
               登录
@@ -209,6 +236,22 @@ export function SiteHeader() {
         onClose={() => setMenuOpen(false)}
       >
         <nav aria-label="移动端导航" className="flex flex-col gap-8">
+          {user ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-base font-medium text-stone-950">{user.nickname}</p>
+              <button
+                type="button"
+                className="cursor-pointer bg-transparent p-0 text-left text-base text-stone-600"
+                disabled={logoutPending}
+                onClick={() => {
+                  setMenuOpen(false)
+                  void logout()
+                }}
+              >
+                退出登录
+              </button>
+            </div>
+          ) : null}
           <div className="flex flex-col gap-3">
             {primaryNav.map((item) => (
               <NavLink

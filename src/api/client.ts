@@ -32,6 +32,50 @@ export function getErrorMessage(error: unknown, fallback = '请求失败，请�
   return fallback
 }
 
+export function isAccountDisabled(error: unknown) {
+  return (
+    error instanceof ApiError &&
+    error.status === 403 &&
+    error.message === '账号已停用'
+  )
+}
+
+type AuthFailureHandler = (error: ApiError) => void
+
+let authFailureHandler: AuthFailureHandler | null = null
+let lastFailureKey = ''
+let lastFailureAt = 0
+
+export function setAuthFailureHandler(handler: AuthFailureHandler | null) {
+  authFailureHandler = handler
+}
+
+function notifyAuthFailure(path: string, error: ApiError) {
+  const pathOnly = path.split('?')[0]
+  const isAuthExchange =
+    pathOnly.endsWith('/auth/login') ||
+    pathOnly.endsWith('/auth/register') ||
+    pathOnly.endsWith('/auth/logout') ||
+    pathOnly.endsWith('/auth/me')
+
+  const accountDisabled = isAccountDisabled(error)
+  const sessionExpired = error.status === 401 && !isAuthExchange
+
+  if (!accountDisabled && !sessionExpired) {
+    return
+  }
+
+  const key = `${error.status}:${error.code}:${error.message}`
+  const now = Date.now()
+  if (key === lastFailureKey && now - lastFailureAt < 1500) {
+    return
+  }
+
+  lastFailureKey = key
+  lastFailureAt = now
+  authFailureHandler?.(error)
+}
+
 export function toQueryString(
   params: Record<string, string | number | boolean | null | undefined>,
 ) {
@@ -112,12 +156,14 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (isApiBody(payload)) {
     if (!response.ok || payload.code !== 'OK') {
-      throw new ApiError(
+      const error = new ApiError(
         response.status,
         payload.message || `请求失败（${response.status}）`,
         payload.code,
         payload,
       )
+      notifyAuthFailure(path, error)
+      throw error
     }
     return payload.data as T
   }
@@ -130,7 +176,9 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
       typeof (payload as { message: unknown }).message === 'string'
         ? (payload as { message: string }).message
         : `请求失败（${response.status}）`
-    throw new ApiError(response.status, message, 'UNKNOWN', payload ?? undefined)
+    const error = new ApiError(response.status, message, 'UNKNOWN', payload ?? undefined)
+    notifyAuthFailure(path, error)
+    throw error
   }
 
   return payload as T

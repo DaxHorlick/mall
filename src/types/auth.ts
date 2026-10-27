@@ -11,7 +11,7 @@ export type AuthUser = {
   nickname: string
   avatar_url: string | null
   status: string
-  last_login_at: string | null
+  last_login_at?: string | null
   created_at: string
 }
 
@@ -20,4 +20,19 @@ export type RegisterRequest = {
   identity_type: IdentityType
   identifier: string
   password: string
+}
+
+export type LoginRequest = {
+  identity_type: IdentityType
+  identifier: string
+  password: string
+}
+
+export type UpdateProfileRequest = {
+  nickname?: string
+  avatar_url?: string
+}
+
+export type AuthLocationState = {
+  from?: string
 }
