@@ -1,5 +1,4 @@
 import type { ApiBody } from '../types/auth.ts'
-import { isMockMode } from './config.ts'
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '')
 
@@ -37,6 +36,15 @@ export function isAccountDisabled(error: unknown) {
     error instanceof ApiError &&
     error.status === 403 &&
     error.message === '账号已停用'
+  )
+}
+
+/** 创作者身份停用时保持买家登录态，不能清掉会话。 */
+export function isCreatorDisabled(error: unknown) {
+  return (
+    error instanceof ApiError &&
+    error.status === 403 &&
+    error.message === '创作者身份已停用'
   )
 }
 
@@ -147,7 +155,7 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (response.status === 204) {
     if (!response.ok) {
-      throw new ApiError(response.status, `请求失败（${response.status}）`)
+      throw new ApiError(response.status, fallbackHttpMessage(response.status))
     }
     return undefined as T
   }
@@ -169,13 +177,7 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (!response.ok) {
-    const message =
-      payload &&
-      typeof payload === 'object' &&
-      'message' in payload &&
-      typeof (payload as { message: unknown }).message === 'string'
-        ? (payload as { message: string }).message
-        : `请求失败（${response.status}）`
+    const message = messageFromPayload(payload) ?? fallbackHttpMessage(response.status)
     const error = new ApiError(response.status, message, 'UNKNOWN', payload ?? undefined)
     notifyAuthFailure(path, error)
     throw error
@@ -184,34 +186,26 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return payload as T
 }
 
-export type UploadImageResult = {
-  url: string
-  /** 标明当前是否为 Mock 上传结果 */
-  isMock: boolean
-}
-
-/**
- * 图片上传调用结构。
- * - Mock：返回本地 object URL / 占位路径，不上传服务器
- * - 真实：POST multipart 到 `/uploads/images`（Go 后端尚未实现）
- */
-export async function uploadImage(file: File): Promise<UploadImageResult> {
-  if (isMockMode()) {
-    await new Promise<void>((resolve) => {
-      window.setTimeout(resolve, 280)
-    })
-    return {
-      url: URL.createObjectURL(file),
-      isMock: true,
-    }
+function messageFromPayload(payload: unknown) {
+  if (
+    payload &&
+    typeof payload === 'object' &&
+    'message' in payload &&
+    typeof (payload as { message: unknown }).message === 'string' &&
+    (payload as { message: string }).message.trim()
+  ) {
+    return (payload as { message: string }).message
   }
 
-  const formData = new FormData()
-  formData.append('file', file)
+  return null
+}
 
-  // TODO(backend): Go 上传接口尚未实现
-  return request<UploadImageResult>('/uploads/images', {
-    method: 'POST',
-    body: formData,
-  })
+function fallbackHttpMessage(status: number) {
+  if (status === 500) {
+    return '内部错误'
+  }
+  if (status === 503) {
+    return '服务暂时不可用'
+  }
+  return '请求失败，请稍后重试'
 }

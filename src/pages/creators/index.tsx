@@ -1,54 +1,66 @@
 import { useQuery } from '@tanstack/react-query'
-import { Empty, Spin } from 'antd'
+import { Button, Empty, Result, Spin } from 'antd'
 import { Link, useParams } from 'react-router-dom'
-import { ApiError, getErrorMessage } from '../../api/client.ts'
-import { fetchCreatorById } from '../../api/creators.ts'
-import { fetchDesignWorks } from '../../api/designs.ts'
-import { fetchProductsByCreator } from '../../api/products.ts'
+import { ApiError, getErrorMessage, isAccountDisabled } from '../../api/client.ts'
+import { fetchPublicPosts, PUBLIC_POSTS_LIMIT } from '../../api/community.ts'
+import { fetchPublicCreator } from '../../api/creators.ts'
 import { queryKeys } from '../../api/queryKeys.ts'
-import { DesignCard } from '../../components/designs/DesignCard.tsx'
-import { ProductCard } from '../../components/products/ProductCard.tsx'
 import { SafeImage } from '../../components/common/SafeImage.tsx'
+import { PublicPostCard } from '../../components/community/PublicPostCard.tsx'
+import { isSessionEnd } from '../../utils/userDesign.ts'
+
+function formatDateTime(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return date.toLocaleString('zh-CN', { hour12: false })
+}
 
 export function CreatorPage() {
-  const { id = '' } = useParams()
+  const { userId = '' } = useParams()
 
   const creatorQuery = useQuery({
-    queryKey: queryKeys.creators.detail(id),
-    queryFn: () => fetchCreatorById(id),
-    enabled: Boolean(id),
+    queryKey: queryKeys.creators.publicProfile(userId),
+    queryFn: () => fetchPublicCreator(userId),
+    enabled: Boolean(userId),
+    retry: false,
   })
 
-  const productsQuery = useQuery({
-    queryKey: queryKeys.creators.products(id),
-    queryFn: () => fetchProductsByCreator(id),
-    enabled: Boolean(id) && creatorQuery.isSuccess,
+  const authorUserId = creatorQuery.data?.user_id
+  const postsQuery = useQuery({
+    queryKey: queryKeys.community.publicList(PUBLIC_POSTS_LIMIT, authorUserId),
+    queryFn: () => {
+      if (typeof authorUserId !== 'number' || authorUserId <= 0) {
+        throw new Error('作者 ID 不正确')
+      }
+
+      return fetchPublicPosts({
+        limit: PUBLIC_POSTS_LIMIT,
+        authorUserId,
+      })
+    },
+    enabled: creatorQuery.isSuccess && typeof authorUserId === 'number' && authorUserId > 0,
+    retry: false,
   })
 
-  const designsQuery = useQuery({
-    queryKey: queryKeys.designs.all,
-    queryFn: fetchDesignWorks,
-    enabled: Boolean(id) && creatorQuery.isSuccess,
-  })
+  if (!userId || creatorQuery.isError) {
+    const error = creatorQuery.error
+    if (error instanceof ApiError && (error.status === 401 || isAccountDisabled(error))) {
+      return (
+        <div className="mx-auto flex max-w-6xl justify-center px-5 py-20">
+          <Spin size="large" tip="正在前往登录…" />
+        </div>
+      )
+    }
 
-  const works = (designsQuery.data ?? []).filter(
-    (item) => item.creatorId === id,
-  )
-
-  if (!id || creatorQuery.isError) {
-    const notFound =
-      creatorQuery.error instanceof ApiError && creatorQuery.error.status === 404
+    const notFound = error instanceof ApiError && error.status === 404
     return (
       <div className="mx-auto max-w-6xl px-5 py-10 md:px-8 md:py-12">
-        <Empty
-          description={
-            notFound
-              ? '找不到该创作者'
-              : getErrorMessage(creatorQuery.error, '创作者加载失败')
-          }
-        >
-          <Link to="/marketplace" className="text-sm text-stone-600 underline">
-            返回创作者市场
+        <Empty description={notFound ? '创作者不存在' : getErrorMessage(error, '创作者加载失败')}>
+          <Link to="/" className="text-sm text-stone-600 underline">
+            返回首页
           </Link>
         </Empty>
       </div>
@@ -64,67 +76,75 @@ export function CreatorPage() {
   }
 
   const creator = creatorQuery.data
+  const posts = Array.isArray(postsQuery.data?.items) ? postsQuery.data.items : []
+  const initial = Array.from(creator.nickname)[0] || Array.from(creator.display_name)[0] || '创'
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-10 md:px-8 md:py-12">
       <section className="flex flex-col gap-5 rounded-[2rem] bg-white p-6 shadow-sm md:flex-row md:items-center md:p-8">
-        <SafeImage
-          src={creator.avatarUrl}
-          alt={creator.name}
-          className="h-24 w-24 rounded-full object-cover"
-        />
+        {creator.avatar_url ? (
+          <SafeImage
+            src={creator.avatar_url}
+            alt={creator.display_name}
+            className="h-24 w-24 rounded-full object-cover"
+          />
+        ) : (
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-stone-200 text-2xl font-semibold text-stone-700">
+            {initial}
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <p className="text-xs tracking-[0.18em] text-stone-400">CREATOR</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-            {creator.name}
-          </h1>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight">{creator.display_name}</h1>
+          <p className="mt-2 text-sm text-stone-500">昵称 {creator.nickname}</p>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-600">
-            {creator.bio}
+            {creator.bio || '还没有简介'}
           </p>
-          <p className="mt-3 text-sm text-stone-500">
-            {creator.productCount} 件商品
-            <span className="mx-2 text-stone-300">·</span>
-            {creator.followerCount.toLocaleString('zh-CN')} 关注
-          </p>
+          <p className="mt-3 text-sm text-stone-400">加入于 {formatDateTime(creator.created_at)}</p>
         </div>
-        <Link
-          to="/marketplace"
-          className="text-sm text-stone-500 transition-colors hover:text-stone-950"
-        >
-          返回市场
+        <Link to="/" className="text-sm text-stone-500 transition-colors hover:text-stone-950">
+          返回首页
         </Link>
       </section>
 
-      <section className="mt-10">
-        <h2 className="text-2xl font-semibold tracking-tight">发布的商品</h2>
-        {productsQuery.isPending ? (
+      <section className="mt-8">
+        <h2 className="text-2xl font-semibold tracking-tight">公开手记</h2>
+        {postsQuery.isPending ? (
           <div className="mt-6 flex justify-center">
-            <Spin />
+            <Spin tip="加载手记…" />
           </div>
         ) : null}
-        {productsQuery.isSuccess && productsQuery.data.length === 0 ? (
-          <p className="mt-4 text-sm text-stone-500">暂无商品</p>
+        {postsQuery.isError ? (
+          isSessionEnd(postsQuery.error) ? (
+            <div className="mt-6 flex justify-center">
+              <Spin tip="正在前往登录…" />
+            </div>
+          ) : (
+            <div className="mt-6">
+              <Result
+                status="warning"
+                title={getErrorMessage(postsQuery.error)}
+                extra={
+                  <Button type="primary" onClick={() => void postsQuery.refetch()}>
+                    重试
+                  </Button>
+                }
+              />
+            </div>
+          )
         ) : null}
-        {productsQuery.data && productsQuery.data.length > 0 ? (
-          <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {productsQuery.data.map((product) => (
-              <ProductCard key={product.id} product={product} />
+        {postsQuery.isSuccess && posts.length === 0 ? (
+          <div className="mt-6 rounded-[1.5rem] bg-white py-12 shadow-sm">
+            <Empty description="还没有公开手记" />
+          </div>
+        ) : null}
+        {postsQuery.isSuccess && posts.length > 0 ? (
+          <div className="mt-5 grid gap-5 sm:grid-cols-2">
+            {posts.map((post) => (
+              <PublicPostCard key={post.id} post={post} />
             ))}
           </div>
         ) : null}
-      </section>
-
-      <section className="mt-12">
-        <h2 className="text-2xl font-semibold tracking-tight">设计作品</h2>
-        {works.length === 0 ? (
-          <p className="mt-4 text-sm text-stone-500">暂无作品</p>
-        ) : (
-          <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
-            {works.map((design) => (
-              <DesignCard key={design.id} design={design} />
-            ))}
-          </div>
-        )}
       </section>
     </div>
   )

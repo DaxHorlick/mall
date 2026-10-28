@@ -1,15 +1,9 @@
-import { Drawer, Dropdown, Input } from 'antd'
-import type { MenuProps } from 'antd'
+import { Drawer, Dropdown } from 'antd'
 import { useState } from 'react'
-import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import {
-  footerGroups,
-  primaryNav,
-  productCategories,
-} from '../../constants/navigation.ts'
-import { useAuthStore } from '../../stores/auth.ts'
-import { useCartStore } from '../../stores/cart.ts'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { footerGroups, primaryNav } from '../../constants/navigation.ts'
 import { useLogout } from '../../hooks/useLogout.ts'
+import { useAuthStore } from '../../stores/auth.ts'
 
 function linkClass(isActive: boolean) {
   return isActive
@@ -19,150 +13,28 @@ function linkClass(isActive: boolean) {
 
 export function SiteHeader() {
   const navigate = useNavigate()
-  const location = useLocation()
-  const [searchParams] = useSearchParams()
   const [menuOpen, setMenuOpen] = useState(false)
   const user = useAuthStore((s) => s.user)
   const status = useAuthStore((s) => s.status)
   const { logout, pending: logoutPending } = useLogout()
-  const cartQuantity = useCartStore((state) =>
-    state.items.reduce((sum, item) => sum + item.quantity, 0),
-  )
-  const keywordFromUrl = searchParams.get('keyword') ?? ''
-  const category = searchParams.get('category') ?? ''
-  const onProductList = location.pathname === '/products'
-
-  const keepListFilters = (next: URLSearchParams) => {
-    if (!onProductList) {
-      return
-    }
-
-    for (const key of ['category', 'minPrice', 'maxPrice', 'sort'] as const) {
-      const value = searchParams.get(key)
-      if (value) {
-        next.set(key, value)
-      }
-    }
-  }
-
-  const submitSearch = (value: string) => {
-    const next = new URLSearchParams()
-    const trimmed = value.trim()
-
-    if (trimmed) {
-      next.set('keyword', trimmed)
-    }
-
-    keepListFilters(next)
-
-    const query = next.toString()
-    navigate(query ? `/products?${query}` : '/products')
-  }
-
-  const goCategory = (key: string) => {
-    const next = new URLSearchParams()
-    const keyword = keywordFromUrl.trim()
-
-    if (keyword) {
-      next.set('keyword', keyword)
-    }
-
-    if (onProductList) {
-      for (const filterKey of ['minPrice', 'maxPrice', 'sort'] as const) {
-        const value = searchParams.get(filterKey)
-        if (value) {
-          next.set(filterKey, value)
-        }
-      }
-    }
-
-    if (key !== 'all') {
-      next.set('category', key)
-    }
-
-    const query = next.toString()
-    setMenuOpen(false)
-    navigate(query ? `/products?${query}` : '/products')
-  }
-
-  const categoryMenu: MenuProps = {
-    selectedKeys: onProductList ? [category || 'all'] : [],
-    items: [
-      { key: 'all', label: '全部商品' },
-      ...productCategories.map((item) => ({
-        key: item.key,
-        label: item.label,
-      })),
-    ],
-    onClick: ({ key }) => goCategory(String(key)),
-  }
-
-  const categoryActive = onProductList && category.length > 0
+  const accountLinks = footerGroups.find((group) => group.title === '账户')?.links ?? []
 
   return (
     <header className="sticky top-0 z-40 border-b border-stone-200/80 bg-white/90 backdrop-blur">
-      <div className="mx-auto grid max-w-6xl grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-3 px-5 py-3 md:px-8 lg:grid-cols-[auto_minmax(0,1fr)_auto_auto] lg:gap-x-6">
-        <NavLink
-          to="/"
-          end
-          className="col-start-1 row-start-1 text-sm font-semibold tracking-[0.28em] text-stone-950"
-        >
+      <div className="mx-auto flex max-w-6xl items-center gap-6 px-5 py-3 md:px-8">
+        <NavLink to="/" end className="text-sm font-semibold tracking-[0.28em] text-stone-950">
           INKTEE
         </NavLink>
 
-        <div className="col-span-3 col-start-1 row-start-2 min-w-0 lg:col-span-1 lg:col-start-2 lg:row-start-1">
-          <Input.Search
-            key={keywordFromUrl}
-            aria-label="搜索 T 恤、图案或创作者"
-            placeholder="搜索 T 恤、图案或创作者"
-            allowClear
-            enterButton="搜索"
-            defaultValue={keywordFromUrl}
-            onSearch={submitSearch}
-          />
-        </div>
-
-        <nav
-          aria-label="主导航"
-          className="col-start-3 row-start-1 hidden items-center gap-5 lg:flex"
-        >
-          <NavLink to="/products" className={({ isActive }) => linkClass(isActive)}>
-            商品
-          </NavLink>
-          <Dropdown menu={categoryMenu} trigger={['click']}>
-            <button
-              type="button"
-              className={
-                categoryActive
-                  ? 'inline-flex cursor-pointer items-center gap-1 bg-transparent p-0 text-sm font-medium text-stone-950'
-                  : 'inline-flex cursor-pointer items-center gap-1 bg-transparent p-0 text-sm text-stone-500 transition-colors hover:text-stone-950'
-              }
-            >
-              分类
-              <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden="true">
-                <path
-                  d="M2.2 4.2 6 8l3.8-3.8"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-          </Dropdown>
-          <NavLink to="/designer" className={({ isActive }) => linkClass(isActive)}>
-            AI 设计
-          </NavLink>
-          <NavLink
-            to="/marketplace"
-            className={({ isActive }) => linkClass(isActive)}
-          >
-            创作者市场
-          </NavLink>
+        <nav aria-label="主导航" className="hidden flex-1 items-center gap-5 lg:flex">
+          {primaryNav.map((item) => (
+            <NavLink key={item.to} to={item.to} className={({ isActive }) => linkClass(isActive)}>
+              {item.label}
+            </NavLink>
+          ))}
         </nav>
 
-        <div className="col-start-3 row-start-1 flex items-center gap-3 justify-self-end lg:col-start-4">
+        <div className="ml-auto flex items-center gap-3">
           {status === 'unknown' ? (
             <span className="inline-block h-5 w-10" aria-hidden="true" />
           ) : user ? (
@@ -170,6 +42,9 @@ export function SiteHeader() {
               menu={{
                 items: [
                   { key: 'profile', label: '个人中心' },
+                  { key: 'creator', label: '创作者中心' },
+                  { key: 'designs', label: '我的设计' },
+                  { key: 'posts', label: '我的手记' },
                   {
                     key: 'logout',
                     label: '退出登录',
@@ -179,6 +54,15 @@ export function SiteHeader() {
                 onClick: ({ key }) => {
                   if (key === 'profile') {
                     navigate('/profile')
+                  }
+                  if (key === 'creator') {
+                    navigate('/creator')
+                  }
+                  if (key === 'designs') {
+                    navigate('/my-designs')
+                  }
+                  if (key === 'posts') {
+                    navigate('/my-posts')
                   }
                   if (key === 'logout') {
                     void logout()
@@ -200,19 +84,6 @@ export function SiteHeader() {
               登录
             </NavLink>
           )}
-          <NavLink
-            to="/cart"
-            className={({ isActive }) =>
-              `${linkClass(isActive)} inline-flex items-center gap-1`
-            }
-          >
-            购物车
-            {cartQuantity > 0 ? (
-              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-stone-950 px-1.5 text-[11px] font-medium text-white">
-                {cartQuantity > 99 ? '99+' : cartQuantity}
-              </span>
-            ) : null}
-          </NavLink>
           <button
             type="button"
             className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-stone-200 bg-white lg:hidden"
@@ -228,13 +99,7 @@ export function SiteHeader() {
         </div>
       </div>
 
-      <Drawer
-        title="菜单"
-        placement="right"
-        size={320}
-        open={menuOpen}
-        onClose={() => setMenuOpen(false)}
-      >
+      <Drawer title="菜单" placement="right" size={320} open={menuOpen} onClose={() => setMenuOpen(false)}>
         <nav aria-label="移动端导航" className="flex flex-col gap-8">
           {user ? (
             <div className="flex flex-col gap-3">
@@ -259,72 +124,30 @@ export function SiteHeader() {
                 to={item.to}
                 onClick={() => setMenuOpen(false)}
                 className={({ isActive }) =>
-                  isActive
-                    ? 'text-base font-medium text-stone-950'
-                    : 'text-base text-stone-600'
+                  isActive ? 'text-base font-medium text-stone-950' : 'text-base text-stone-600'
                 }
               >
                 {item.label}
               </NavLink>
             ))}
           </div>
-
           <div>
-            <p className="text-xs tracking-[0.18em] text-stone-400">分类</p>
+            <p className="text-xs tracking-[0.18em] text-stone-400">账户</p>
             <div className="mt-3 flex flex-col gap-3">
-              <button
-                type="button"
-                className={
-                  onProductList && !category
-                    ? 'cursor-pointer bg-transparent p-0 text-left text-base font-medium text-stone-950'
-                    : 'cursor-pointer bg-transparent p-0 text-left text-base text-stone-600'
-                }
-                onClick={() => goCategory('all')}
-              >
-                全部商品
-              </button>
-              {productCategories.map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  className={
-                    onProductList && category === item.key
-                      ? 'cursor-pointer bg-transparent p-0 text-left text-base font-medium text-stone-950'
-                      : 'cursor-pointer bg-transparent p-0 text-left text-base text-stone-600'
+              {accountLinks.map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  onClick={() => setMenuOpen(false)}
+                  className={({ isActive }) =>
+                    isActive ? 'text-base font-medium text-stone-950' : 'text-base text-stone-600'
                   }
-                  onClick={() => goCategory(item.key)}
                 >
-                  {item.label}
-                </button>
+                  {link.label}
+                </NavLink>
               ))}
             </div>
           </div>
-
-          {footerGroups
-            .filter((group) => group.title !== '逛逛')
-            .map((group) => (
-              <div key={group.title}>
-                <p className="text-xs tracking-[0.18em] text-stone-400">
-                  {group.title}
-                </p>
-                <div className="mt-3 flex flex-col gap-3">
-                  {group.links.map((link) => (
-                    <NavLink
-                      key={link.to}
-                      to={link.to}
-                      onClick={() => setMenuOpen(false)}
-                      className={({ isActive }) =>
-                        isActive
-                          ? 'text-base font-medium text-stone-950'
-                          : 'text-base text-stone-600'
-                      }
-                    >
-                      {link.label}
-                    </NavLink>
-                  ))}
-                </div>
-              </div>
-            ))}
         </nav>
       </Drawer>
     </header>

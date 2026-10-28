@@ -16,13 +16,13 @@ export function AiDesignEntry() {
               用文字描述生成专属图案
             </h2>
             <p className="mt-4 max-w-md text-sm leading-6 text-stone-600 md:text-base md:leading-7">
-              输入风格与主题，预览图案印在 T 恤上的效果，再决定保存或发布。
+              填写标题和提示词。生成不会立刻完成，创建任务后会在设计页里轮询结果。
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button
                 type="primary"
                 size="large"
-                onClick={() => navigate('/designer')}
+                onClick={() => navigate('/my-designs/new')}
               >
                 打开设计器
               </Button>

@@ -1,25 +1,26 @@
 import { useQuery } from '@tanstack/react-query'
-import { Button, Empty, Spin } from 'antd'
+import { Button, Empty, Result, Spin } from 'antd'
 import { Link } from 'react-router-dom'
+import { fetchMyDesigns, MY_DESIGNS_LIMIT } from '../../api/userDesigns.ts'
+import { getErrorMessage } from '../../api/client.ts'
 import { queryKeys } from '../../api/queryKeys.ts'
-import { fetchCurrentUser } from '../../api/users.ts'
-import { TeePreview } from '../../components/designer/TeePreview.tsx'
-import { SafeImage } from '../../components/common/SafeImage.tsx'
-import { useDesignsStore } from '../../stores/designs.ts'
-import { DEFAULT_PREVIEW_CONFIG } from '../../types/design.ts'
+import { BoundImage } from '../../components/designs/BoundImage.tsx'
+import {
+  ORIGIN_LABEL,
+  REVIEW_STATUS_LABEL,
+  VISIBILITY_LABEL,
+  isSessionEnd,
+} from '../../utils/userDesign.ts'
 
 export function MyDesignsPage() {
-  // 选择器必须返回稳定引用；在组件内再 filter，避免每次新建数组导致无限重渲染
-  const allWorks = useDesignsStore((state) => state.works)
-  const userQuery = useQuery({
-    queryKey: queryKeys.user.current,
-    queryFn: fetchCurrentUser,
+  const designsQuery = useQuery({
+    queryKey: queryKeys.designs.mine(MY_DESIGNS_LIMIT),
+    queryFn: () => fetchMyDesigns(MY_DESIGNS_LIMIT),
+    retry: false,
+    refetchOnMount: 'always',
   })
-  const works = allWorks.filter(
-    (item) => item.creatorId === userQuery.data?.creatorId,
-  )
 
-  if (userQuery.isPending) {
+  if (designsQuery.isPending) {
     return (
       <div className="mx-auto flex max-w-6xl justify-center px-5 py-20">
         <Spin size="large" tip="加载我的设计…" />
@@ -27,87 +28,83 @@ export function MyDesignsPage() {
     )
   }
 
+  if (designsQuery.isError) {
+    if (isSessionEnd(designsQuery.error)) {
+      return (
+        <div className="mx-auto flex max-w-6xl justify-center px-5 py-20">
+          <Spin size="large" tip="正在前往登录…" />
+        </div>
+      )
+    }
+
+    return (
+      <div className="mx-auto max-w-6xl px-5 py-16">
+        <Result
+          status="warning"
+          title={getErrorMessage(designsQuery.error)}
+          extra={
+            <Button type="primary" onClick={() => void designsQuery.refetch()}>
+              重试
+            </Button>
+          }
+        />
+      </div>
+    )
+  }
+
+  const items = Array.isArray(designsQuery.data.items) ? designsQuery.data.items : []
+
   return (
     <div className="mx-auto max-w-6xl px-5 py-10 md:px-8 md:py-12">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-medium tracking-[0.22em] text-stone-400">
-            MY DESIGNS
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-            我的设计
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-500 md:text-base">
-            展示当前 Mock 创作者账号下的作品，包含 AI 设计器保存的本地数据。
+          <p className="text-xs font-medium tracking-[0.22em] text-stone-400">MY DESIGNS</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">我的设计</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-500">
+            这里是当前账号的设计，包含草稿和未公开作品。列表只取最新 {MY_DESIGNS_LIMIT} 件。
           </p>
         </div>
-        <Link to="/designer">
-          <Button type="primary">去 AI 设计</Button>
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link to="/my-designs/new">
+            <Button type="primary">创建 AI 设计</Button>
+          </Link>
+          <Link to="/my-designs/upload">
+            <Button>上传设计</Button>
+          </Link>
+        </div>
       </div>
 
-      {works.length === 0 ? (
+      {items.length === 0 ? (
         <div className="mt-8 rounded-[1.5rem] bg-white py-16 shadow-sm">
-          <Empty description="还没有设计作品">
-            <Link to="/designer">
-              <Button type="primary">开始创作</Button>
+          <Empty description="还没有设计">
+            <Link to="/my-designs/new">
+              <Button type="primary">创建 AI 设计</Button>
             </Link>
           </Empty>
         </div>
       ) : (
-        <div className="mt-8 grid gap-5 md:grid-cols-2">
-          {works.map((work) => (
-            <article
-              key={work.id}
-              className="overflow-hidden rounded-[1.5rem] bg-white shadow-sm"
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((design) => (
+            <Link
+              key={design.id}
+              to={`/designs/${design.id}`}
+              className="overflow-hidden rounded-[1.5rem] bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
             >
-              <div className="grid gap-4 p-4 md:grid-cols-2 md:p-5">
-                <TeePreview
-                  patternUrl={work.imageUrl}
-                  config={work.preview ?? {
-                    ...DEFAULT_PREVIEW_CONFIG,
-                    teeColor: '#171717',
-                  }}
-                  teeStyle={work.teeStyle}
-                  className="relative aspect-[4/5] overflow-hidden rounded-[1.25rem] bg-stone-100"
-                />
-                <div className="flex flex-col">
-                  <div className="overflow-hidden rounded-xl bg-stone-50 p-3">
-                    <SafeImage
-                      src={work.imageUrl}
-                      alt={work.title}
-                      className="mx-auto h-28 w-auto object-contain"
-                    />
-                  </div>
-                  <h2 className="mt-4 text-lg font-semibold text-stone-950">
-                    {work.title}
-                  </h2>
-                  <p className="mt-1 text-sm text-stone-500">
-                    {work.createdAt}
-                    {work.isMock ? ' · 本地模拟' : null}
-                  </p>
-                  {work.prompt ? (
-                    <p className="mt-3 line-clamp-3 text-sm text-stone-600">
-                      {work.prompt}
-                    </p>
-                  ) : null}
-                  <div className="mt-auto flex flex-wrap gap-3 pt-4">
-                    {work.productId ? (
-                      <Link to={`/products/${work.productId}`}>
-                        <Button>查看商品</Button>
-                      </Link>
-                    ) : (
-                      <Link to="/seller/products?fromDesign=1">
-                        <Button type="primary">发布为商品</Button>
-                      </Link>
-                    )}
-                    <Link to={`/marketplace?design=${work.id}`}>
-                      <Button type="link">作品详情</Button>
-                    </Link>
-                  </div>
+              {design.result?.url ? (
+                <BoundImage url={design.result.url} alt={design.title} />
+              ) : (
+                <div className="flex h-52 items-center justify-center bg-stone-100 text-sm text-stone-500">
+                  尚未生成
                 </div>
+              )}
+              <div className="space-y-1 p-4">
+                <h2 className="line-clamp-1 text-base font-medium text-stone-950">{design.title}</h2>
+                <p className="text-sm text-stone-500">
+                  {ORIGIN_LABEL[design.origin]} · {REVIEW_STATUS_LABEL[design.review_status]} ·{' '}
+                  {VISIBILITY_LABEL[design.visibility]}
+                </p>
               </div>
-            </article>
+            </Link>
           ))}
         </div>
       )}

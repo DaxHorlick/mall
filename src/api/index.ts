@@ -1,10 +1,7 @@
 /**
- * API 层统一出口。页面与组件应从此处或子模块导入，不要直接 fetch / 引用 mocks。
- *
- * Mock 切换：环境变量 VITE_USE_MOCK（默认 true）
- * 真实后端：VITE_API_BASE_URL
+ * API 层统一出口。页面与组件应从此处或子模块导入，不要直接 fetch。
+ * 基地址：VITE_API_BASE_URL，请求统一走 /api/v1。
  */
-export { ApiError, getErrorMessage, request, uploadImage } from './client.ts'
-export { isMockMode } from './config.ts'
+export { ApiError, getErrorMessage, request } from './client.ts'
 export { queryKeys } from './queryKeys.ts'
 export { createAppQueryClient } from './queryClient.ts'
