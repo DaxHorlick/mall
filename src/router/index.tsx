@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 import { RequireAuth } from '../components/auth/RequireAuth.tsx'
 import { MainLayout } from '../layouts/MainLayout.tsx'
 import { LoginPage } from '../pages/auth/login.tsx'
@@ -9,12 +9,7 @@ import { CommunityPage } from '../pages/community/index.tsx'
 import { PostDetailPage } from '../pages/community/detail.tsx'
 import { CreatorCenterPage } from '../pages/creator/index.tsx'
 import { CreatorPage } from '../pages/creators/index.tsx'
-import { CreateAiDesignPage } from '../pages/designs/createAi.tsx'
-import { CreateUploadDesignPage } from '../pages/designs/createUpload.tsx'
-import { DesignDetailPage } from '../pages/designs/detail.tsx'
 import { HomePage } from '../pages/home/index.tsx'
-import { MarketplacePage } from '../pages/marketplace/index.tsx'
-import { MyDesignsPage } from '../pages/my-designs/index.tsx'
 import { CreatePostPage } from '../pages/my-posts/create.tsx'
 import { MyPostsPage } from '../pages/my-posts/index.tsx'
 import { MyStorePage } from '../pages/my-store/index.tsx'
@@ -34,9 +29,6 @@ export const router = createBrowserRouter([
       { path: '/', element: <HomePage /> },
       { path: '/products', element: <ProductsPage /> },
       { path: '/products/:id', element: <ProductDetailPage /> },
-      { path: '/designer', element: <Navigate to="/my-designs/new" replace /> },
-      { path: '/designs/:id', element: <DesignDetailPage /> },
-      { path: '/marketplace', element: <MarketplacePage /> },
       { path: '/community', element: <CommunityPage /> },
       { path: '/community/:id', element: <PostDetailPage /> },
       { path: '/creators/:userId', element: <CreatorPage /> },
@@ -51,11 +43,8 @@ export const router = createBrowserRouter([
           { path: '/orders/:id', element: <OrderDetailPage /> },
           { path: '/profile', element: <ProfilePage /> },
           { path: '/creator', element: <CreatorCenterPage /> },
-          { path: '/my-designs', element: <MyDesignsPage /> },
           { path: '/my-posts', element: <MyPostsPage /> },
           { path: '/my-posts/new', element: <CreatePostPage /> },
-          { path: '/my-designs/new', element: <CreateAiDesignPage /> },
-          { path: '/my-designs/upload', element: <CreateUploadDesignPage /> },
           { path: '/my-store', element: <MyStorePage /> },
           { path: '/seller/products', element: <SellerProductsPage /> },
           { path: '/seller/orders', element: <SellerOrdersPage /> },

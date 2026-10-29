@@ -39,6 +39,14 @@ export function isAccountDisabled(error: unknown) {
   )
 }
 
+export function isSessionEnd(error: unknown) {
+  return error instanceof ApiError && (error.status === 401 || isAccountDisabled(error))
+}
+
+export function isRateLimited(error: unknown) {
+  return error instanceof ApiError && (error.status === 429 || error.code === 'RATE_LIMITED')
+}
+
 /** 创作者身份停用时保持买家登录态，不能清掉会话。 */
 export function isCreatorDisabled(error: unknown) {
   return (

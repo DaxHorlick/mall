@@ -11,7 +11,7 @@ import { validateAvatarUrl, validateNickname } from '../../utils/auth.ts'
 
 const links = [
   { to: '/creator', label: '创作者中心', desc: '申请成为创作者，或修改展示名和简介' },
-  { to: '/my-designs', label: '我的设计', desc: '创建、生成和提交自己的设计' },
+  { to: '/my-posts', label: '我的手记', desc: '查看和继续写自己的创作手记' },
 ]
 
 type ProfileFormValues = {

@@ -1,6 +1,12 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { queryKeys } from '../api/queryKeys.ts'
-import type { CommunityPost, OwnedPostDesign, PostStatus } from '../types/community.ts'
+import type {
+  CommunityPost,
+  OwnedPostDesign,
+  PostDesignReviewStatus,
+  PostDesignVisibility,
+  PostStatus,
+} from '../types/community.ts'
 import type { CreatorStatus } from '../types/creator.ts'
 
 export const PUBLIC_POSTS_LIMIT = 20
@@ -8,6 +14,18 @@ export const PUBLIC_POSTS_LIMIT = 20
 export const MY_POSTS_LIMIT = 20
 
 export const COMMENTS_LIMIT = 20
+
+export const POST_DESIGN_VISIBILITY_LABEL: Record<PostDesignVisibility, string> = {
+  private: '私有',
+  public: '公开',
+}
+
+export const POST_DESIGN_REVIEW_LABEL: Record<PostDesignReviewStatus, string> = {
+  draft: '草稿',
+  pending: '审核中',
+  approved: '已通过',
+  rejected: '已拒绝',
+}
 
 export const POST_STATUS_LABEL: Record<PostStatus, string> = {
   draft: '草稿',
@@ -27,6 +45,19 @@ const WITHDRAW_NOTICE = '撤回后手记离开公开列表，已有评论和点�
 
 export function withdrawNotice() {
   return WITHDRAW_NOTICE
+}
+
+export function formatDateTime(value: string | null | undefined) {
+  if (!value) {
+    return null
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return date.toLocaleString('zh-CN', { hour12: false })
 }
 
 function charCount(value: string) {

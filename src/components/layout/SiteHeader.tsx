@@ -43,7 +43,6 @@ export function SiteHeader() {
                 items: [
                   { key: 'profile', label: '个人中心' },
                   { key: 'creator', label: '创作者中心' },
-                  { key: 'designs', label: '我的设计' },
                   { key: 'posts', label: '我的手记' },
                   {
                     key: 'logout',
@@ -57,9 +56,6 @@ export function SiteHeader() {
                   }
                   if (key === 'creator') {
                     navigate('/creator')
-                  }
-                  if (key === 'designs') {
-                    navigate('/my-designs')
                   }
                   if (key === 'posts') {
                     navigate('/my-posts')

@@ -2,10 +2,9 @@ import { useQuery } from '@tanstack/react-query'
 import { Button, Empty, Result, Spin } from 'antd'
 import { Link } from 'react-router-dom'
 import { fetchPublicPosts, PUBLIC_POSTS_LIMIT } from '../../api/community.ts'
-import { getErrorMessage } from '../../api/client.ts'
+import { getErrorMessage, isSessionEnd } from '../../api/client.ts'
 import { queryKeys } from '../../api/queryKeys.ts'
 import { PublicPostCard } from '../../components/community/PublicPostCard.tsx'
-import { isSessionEnd } from '../../utils/userDesign.ts'
 
 export function CommunityPage() {
   const postsQuery = useQuery({

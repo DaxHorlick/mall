@@ -1,7 +1,9 @@
-import { Link } from 'react-router-dom'
-import type { DesignReviewStatus, DesignVisibility } from '../../types/userDesign.ts'
-import { REVIEW_STATUS_LABEL, VISIBILITY_LABEL } from '../../utils/userDesign.ts'
-import { postImageUrl } from '../../utils/community.ts'
+import type { PostDesignReviewStatus, PostDesignVisibility } from '../../types/community.ts'
+import {
+  POST_DESIGN_REVIEW_LABEL,
+  POST_DESIGN_VISIBILITY_LABEL,
+  postImageUrl,
+} from '../../utils/community.ts'
 import { BoundImage } from '../designs/BoundImage.tsx'
 
 type PostDesignCardProps = {
@@ -10,8 +12,8 @@ type PostDesignCardProps = {
     title: string
     result: { url: string } | null
     preview: { url: string } | null
-    visibility?: DesignVisibility
-    review_status?: DesignReviewStatus
+    visibility?: PostDesignVisibility
+    review_status?: PostDesignReviewStatus
   }
   showStatus: boolean
 }
@@ -25,7 +27,8 @@ export function PostDesignCard({ design, showStatus }: PostDesignCardProps) {
       <h2 className="mt-2 text-lg font-medium text-stone-950">{design.title}</h2>
       {showStatus && design.visibility && design.review_status ? (
         <p className="mt-1 text-sm text-stone-500">
-          {VISIBILITY_LABEL[design.visibility]} · {REVIEW_STATUS_LABEL[design.review_status]}
+          {POST_DESIGN_VISIBILITY_LABEL[design.visibility]} ·{' '}
+          {POST_DESIGN_REVIEW_LABEL[design.review_status]}
         </p>
       ) : null}
       <div className="mt-4">
@@ -37,12 +40,6 @@ export function PostDesignCard({ design, showStatus }: PostDesignCardProps) {
           </div>
         )}
       </div>
-      <Link
-        to={`/designs/${design.id}`}
-        className="mt-4 inline-block text-sm text-stone-500 transition-colors hover:text-stone-950"
-      >
-        查看设计
-      </Link>
     </section>
   )
 }

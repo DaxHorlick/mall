@@ -9,7 +9,7 @@ import {
   updatePostBody,
   withdrawPost,
 } from '../../api/community.ts'
-import { getErrorMessage } from '../../api/client.ts'
+import { getErrorMessage, isSessionEnd } from '../../api/client.ts'
 import { queryKeys } from '../../api/queryKeys.ts'
 import type { OwnedPost } from '../../types/community.ts'
 import type { CreatorProfile } from '../../types/creator.ts'
@@ -19,12 +19,12 @@ import {
   cacheCommunityPost,
   creatorSubmitHint,
   designReadyForPublicPost,
+  formatDateTime,
   invalidateCommunityLists,
   validatePostBody,
   validatePostBodyForSubmit,
   withdrawNotice,
 } from '../../utils/community.ts'
-import { formatDesignTime, isSessionEnd } from '../../utils/userDesign.ts'
 import { PostDesignCard } from './PostDesignCard.tsx'
 import { PostInteraction } from './PostInteraction.tsx'
 
@@ -40,10 +40,10 @@ export function OwnedPostView({ post }: { post: OwnedPost }) {
   const [pendingAction, setPendingAction] = useState<string | null>(null)
   const canEdit = post.status === 'draft' || post.status === 'rejected'
   const canWithdraw = post.status === 'published'
-  const publishedAt = formatDesignTime(post.published_at)
-  const reviewedAt = formatDesignTime(post.reviewed_at)
-  const createdAt = formatDesignTime(post.created_at)
-  const updatedAt = formatDesignTime(post.updated_at)
+  const publishedAt = formatDateTime(post.published_at)
+  const reviewedAt = formatDateTime(post.reviewed_at)
+  const createdAt = formatDateTime(post.created_at)
+  const updatedAt = formatDateTime(post.updated_at)
   const creator = queryClient.getQueryData<CreatorProfile | null>(queryKeys.creators.me)
   const hints = [
     creatorSubmitHint(creator),

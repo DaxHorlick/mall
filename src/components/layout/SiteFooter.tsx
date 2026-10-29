@@ -8,7 +8,7 @@ export function SiteFooter() {
         <div>
           <p className="text-sm font-semibold tracking-[0.28em]">INKTEE</p>
           <p className="mt-4 max-w-xs text-sm leading-6 text-stone-500">
-            用一句话生成图案，或浏览已经公开的设计。
+            浏览创作手记，读一件作品背后的说明。
           </p>
         </div>
         {footerGroups.map((group) => (

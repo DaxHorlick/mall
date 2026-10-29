@@ -6,11 +6,7 @@ export const queryKeys = {
     publicProfile: (userId: string) => ['creators', 'public', userId] as const,
   },
   designs: {
-    all: ['designs'] as const,
     mine: (limit: number) => ['designs', 'mine', limit] as const,
-    publicList: (limit: number) => ['designs', 'public', limit] as const,
-    record: (id: string) => ['designs', 'record', id] as const,
-    generations: (id: string) => ['designs', 'generations', id] as const,
   },
   community: {
     all: ['community'] as const,

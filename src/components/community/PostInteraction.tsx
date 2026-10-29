@@ -9,12 +9,11 @@ import {
   likePost,
   unlikePost,
 } from '../../api/community.ts'
-import { getErrorMessage } from '../../api/client.ts'
+import { getErrorMessage, isRateLimited, isSessionEnd } from '../../api/client.ts'
 import { queryKeys } from '../../api/queryKeys.ts'
 import { useAuthStore } from '../../stores/auth.ts'
 import type { CommunityPost, PostComment } from '../../types/community.ts'
-import { cacheCommunityPost, validateComment } from '../../utils/community.ts'
-import { formatDesignTime, isRateLimited, isSessionEnd } from '../../utils/userDesign.ts'
+import { cacheCommunityPost, formatDateTime, validateComment } from '../../utils/community.ts'
 
 type CommentFormValues = {
   content: string
@@ -22,7 +21,7 @@ type CommentFormValues = {
 
 function CommentItem({ comment }: { comment: PostComment }) {
   const [failed, setFailed] = useState(false)
-  const time = formatDesignTime(comment.created_at)
+  const time = formatDateTime(comment.created_at)
   const initial = Array.from(comment.nickname)[0]
 
   return (

@@ -11,7 +11,7 @@ export function NotFoundPage() {
       </p>
       <h1 className="mt-4 text-3xl font-semibold tracking-tight">没有找到这个页面</h1>
       <p className="mt-4 max-w-md text-base leading-7 text-stone-600">
-        这个地址没有对应页面。可以回到首页，或从导航继续浏览商品和设计。
+        这个地址没有对应页面。可以回到首页，或从导航继续浏览。
       </p>
       <div className="mt-8 flex flex-wrap gap-3">
         <Button type="primary" size="large" onClick={() => navigate('/')}>

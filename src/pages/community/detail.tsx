@@ -2,13 +2,12 @@ import { useQuery } from '@tanstack/react-query'
 import { Button, Empty, Result, Spin } from 'antd'
 import { useParams } from 'react-router-dom'
 import { fetchPost } from '../../api/community.ts'
-import { ApiError, getErrorMessage } from '../../api/client.ts'
+import { ApiError, getErrorMessage, isSessionEnd } from '../../api/client.ts'
 import { queryKeys } from '../../api/queryKeys.ts'
 import { OwnedPostView } from '../../components/community/OwnedPostView.tsx'
 import { PublicPostView } from '../../components/community/PublicPostView.tsx'
 import { isOwnedPost } from '../../types/community.ts'
 import { parsePostId } from '../../utils/community.ts'
-import { isSessionEnd } from '../../utils/userDesign.ts'
 
 export function PostDetailPage() {
   const params = useParams()

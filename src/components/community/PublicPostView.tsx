@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { PostAuthor, PublicPost } from '../../types/community.ts'
-import { formatDesignTime } from '../../utils/userDesign.ts'
+import { formatDateTime } from '../../utils/community.ts'
 import { PostDesignCard } from './PostDesignCard.tsx'
 import { PostInteraction } from './PostInteraction.tsx'
 
@@ -34,7 +34,7 @@ function AuthorBadge({ author }: { author: PostAuthor }) {
 }
 
 export function PublicPostView({ post }: { post: PublicPost }) {
-  const publishedAt = formatDesignTime(post.published_at)
+  const publishedAt = formatDateTime(post.published_at)
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-10 md:px-8 md:py-12">

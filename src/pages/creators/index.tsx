@@ -1,13 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { Button, Empty, Result, Spin } from 'antd'
 import { Link, useParams } from 'react-router-dom'
-import { ApiError, getErrorMessage, isAccountDisabled } from '../../api/client.ts'
+import { ApiError, getErrorMessage, isAccountDisabled, isSessionEnd } from '../../api/client.ts'
 import { fetchPublicPosts, PUBLIC_POSTS_LIMIT } from '../../api/community.ts'
 import { fetchPublicCreator } from '../../api/creators.ts'
 import { queryKeys } from '../../api/queryKeys.ts'
 import { SafeImage } from '../../components/common/SafeImage.tsx'
 import { PublicPostCard } from '../../components/community/PublicPostCard.tsx'
-import { isSessionEnd } from '../../utils/userDesign.ts'
 
 function formatDateTime(value: string) {
   const date = new Date(value)

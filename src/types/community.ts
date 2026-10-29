@@ -1,4 +1,20 @@
-import type { DesignImage, DesignReviewStatus, DesignVisibility, PreviewImage } from './userDesign.ts'
+export type PostDesignVisibility = 'private' | 'public'
+
+export type PostDesignReviewStatus = 'draft' | 'pending' | 'approved' | 'rejected'
+
+export type PostDesignImage = {
+  object_key: string
+  url: string
+  content_type: string
+  bytes: number
+  width: number | null
+  height: number | null
+}
+
+export type PostPreviewImage = {
+  object_key: string
+  url: string
+}
 
 export type PostStatus = 'draft' | 'pending' | 'published' | 'rejected' | 'hidden'
 
@@ -6,18 +22,18 @@ export type PostStatus = 'draft' | 'pending' | 'published' | 'rejected' | 'hidde
 export type OwnedPostDesign = {
   id: number
   title: string
-  visibility: DesignVisibility
-  review_status: DesignReviewStatus
-  result: DesignImage | null
-  preview: PreviewImage | null
+  visibility: PostDesignVisibility
+  review_status: PostDesignReviewStatus
+  result: PostDesignImage | null
+  preview: PostPreviewImage | null
 }
 
 /** 公开手记上的设计卡片。没有可见性和审核状态。 */
 export type PublicPostDesign = {
   id: number
   title: string
-  result: DesignImage | null
-  preview: PreviewImage | null
+  result: PostDesignImage | null
+  preview: PostPreviewImage | null
 }
 
 export type PostAuthor = {

@@ -20,20 +20,14 @@ export function HeroBanner() {
             把一句话，印成一件 T 恤
           </h1>
           <p className="mt-6 max-w-lg text-base leading-7 text-stone-300">
-            填写标题和提示词创建 AI 设计，或浏览已经公开并通过审核的作品。
+            看看已经公开的创作手记，读一件作品背后的说明。
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              to="/my-designs/new"
+              to="/community"
               className="inline-flex h-11 items-center justify-center rounded-[10px] bg-white px-5 text-sm font-medium text-stone-950 transition hover:bg-stone-200"
             >
-              开始 AI 设计
-            </Link>
-            <Link
-              to="/marketplace"
-              className="inline-flex h-11 items-center justify-center rounded-[10px] border border-stone-500 px-5 text-sm font-medium text-stone-50 transition hover:border-stone-200"
-            >
-              浏览设计广场
+              看创作手记
             </Link>
           </div>
         </div>
@@ -47,8 +41,8 @@ export function HeroBanner() {
             />
           </div>
           <div className="absolute -bottom-4 -left-3 rounded-2xl bg-white px-4 py-3 text-stone-950 shadow-lg md:-left-6">
-            <p className="text-xs tracking-[0.16em] text-stone-400">AI DESIGN</p>
-            <p className="mt-1 text-sm font-medium">从一句话开始</p>
+            <p className="text-xs tracking-[0.16em] text-stone-400">NOTES</p>
+            <p className="mt-1 text-sm font-medium">作品背后的说明</p>
           </div>
         </div>
       </div>

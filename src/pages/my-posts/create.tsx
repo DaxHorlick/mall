@@ -3,11 +3,10 @@ import { App, Button, Empty, Form, Input, Result, Select, Spin } from 'antd'
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { createPost, fetchMyPosts, MY_POSTS_LIMIT } from '../../api/community.ts'
-import { getErrorMessage } from '../../api/client.ts'
+import { getErrorMessage, isRateLimited, isSessionEnd } from '../../api/client.ts'
 import { queryKeys } from '../../api/queryKeys.ts'
 import { fetchMyDesigns, MY_DESIGNS_LIMIT } from '../../api/userDesigns.ts'
 import { cacheCommunityPost, invalidateCommunityLists, validatePostBody } from '../../utils/community.ts'
-import { isRateLimited, isSessionEnd } from '../../utils/userDesign.ts'
 
 type CreatePostForm = {
   design_id: number
@@ -133,11 +132,7 @@ export function CreatePostPage() {
 
       {designs.length === 0 ? (
         <div className="mt-8 rounded-[1.5rem] bg-white py-16 shadow-sm">
-          <Empty description="还没有设计">
-            <Link to="/my-designs/new">
-              <Button type="primary">创建设计</Button>
-            </Link>
-          </Empty>
+          <Empty description="还没有可以写手记的设计" />
         </div>
       ) : null}
 

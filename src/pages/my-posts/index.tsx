@@ -2,10 +2,9 @@ import { useQuery } from '@tanstack/react-query'
 import { Button, Empty, Result, Spin } from 'antd'
 import { Link } from 'react-router-dom'
 import { fetchMyPosts, MY_POSTS_LIMIT } from '../../api/community.ts'
-import { getErrorMessage } from '../../api/client.ts'
+import { getErrorMessage, isSessionEnd } from '../../api/client.ts'
 import { queryKeys } from '../../api/queryKeys.ts'
 import { POST_STATUS_LABEL } from '../../utils/community.ts'
-import { isSessionEnd } from '../../utils/userDesign.ts'
 
 export function MyPostsPage() {
   const postsQuery = useQuery({
