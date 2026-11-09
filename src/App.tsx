@@ -45,7 +45,7 @@ export default function App() {
           locale={zhCN}
           theme={{
             token: {
-              colorPrimary: '#111111',
+              colorPrimary: '#17181b',
               borderRadius: 10,
               fontFamily: '"Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
             },

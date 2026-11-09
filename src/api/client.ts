@@ -1,3 +1,5 @@
+import { useSession } from '../auth/session.ts'
+
 type ApiBody<T> = {
   code: string
   message: string
@@ -54,8 +56,11 @@ function httpMessage(status: number) {
   return '请求失败，请稍后重试'
 }
 
-/** 带 Cookie 的 fetch。响应若是 `{ code, message, data }`，返回其中的 data。 */
-export async function request<T>(path: string, init?: RequestInit): Promise<T> {
+/** 带 Cookie 的 fetch。`auth: true` 时附带内存中的访问令牌。响应若是 `{ code, message, data }`，返回其中的 data。 */
+export async function request<T>(
+  path: string,
+  init?: RequestInit & { auth?: boolean },
+): Promise<T> {
   if (!baseUrl) {
     throw new Error('缺少环境变量 VITE_API_BASE_URL')
   }
@@ -64,18 +69,25 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!headers.has('Accept')) {
     headers.set('Accept', 'application/json')
   }
+  if (init?.auth) {
+    const token = useSession.getState().accessToken
+    if (token) headers.set('Authorization', `Bearer ${token}`)
+  }
   const isFormData = typeof FormData !== 'undefined' && init?.body instanceof FormData
   if (init?.body !== undefined && !isFormData && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
   }
 
+  const fetchInit: RequestInit & { auth?: boolean } = {
+    ...init,
+    credentials: 'include',
+    headers,
+  }
+  delete fetchInit.auth
+
   let response: Response
   try {
-    response = await fetch(`${baseUrl}${path}`, {
-      ...init,
-      credentials: 'include',
-      headers,
-    })
+    response = await fetch(`${baseUrl}${path}`, fetchInit)
   } catch {
     throw new ApiError(0, '网络异常，请检查连接后重试')
   }
@@ -87,7 +99,7 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
     return undefined as T
   }
 
-  let payload: unknown = null
+  let payload: unknown
   try {
     payload = await response.json()
   } catch {
@@ -105,6 +117,11 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (isEnvelope) {
     const body = payload as ApiBody<T>
     if (!response.ok || body.code !== 'OK') {
+      if (body.message === '未登录') {
+        useSession.getState().signOut(null)
+      } else if (body.message === '账号不可用') {
+        useSession.getState().signOut('账号不可用')
+      }
       throw new ApiError(
         response.status,
         body.message || `请求失败（${response.status}）`,
