@@ -1,4 +1,3 @@
-import { Alert, Button, Input } from 'antd'
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { getErrorMessage, request } from '../../api/client.ts'
@@ -13,17 +12,30 @@ export function LoginPage() {
   const banner = error ?? notice
 
   return (
-    <section className="mx-auto flex max-w-6xl flex-col gap-10 px-5 py-16 md:px-8 md:py-20">
-      <div className="max-w-xl rounded-[28px] bg-gradient-to-br from-[#17181b] to-[#5c4033] px-8 py-10 text-white">
-        <h1 className="text-5xl font-normal leading-none tracking-tight">登录</h1>
-        <p className="mt-5 max-w-md text-sm leading-6 text-white/80">
-          使用用户名、手机号或邮箱登录。登录成功后进入账号页。
+    <section className="mx-auto grid max-w-[1440px] items-start gap-10 px-5 py-12 md:px-14 lg:grid-cols-[minmax(0,640px)_minmax(0,560px)] lg:justify-between lg:py-[50px]">
+      <div className="rounded-xl bg-[#d7fa55] px-9 py-10 text-[#191919] lg:min-h-[666px]">
+        <p className="text-xs font-bold">MADE FOR SELF-EXPRESSION.</p>
+        <h1 className="mt-16 max-w-md text-5xl font-bold leading-[1.15] md:text-[70px] md:leading-[1.2]">
+          Good ideas
+          <br />
+          start here.
+        </h1>
+        <p className="mt-16 max-w-md text-2xl font-medium leading-snug">
+          Make something original.
+          <br />
+          Find your people.
+          <br />
+          Wear your kind of weird.
         </p>
       </div>
-      <div className="w-full max-w-md">
-        {banner ? <Alert type="error" showIcon title={banner} /> : null}
+      <div className="lg:pt-7">
+        <h2 className="text-4xl font-semibold">Welcome to Dezajn.</h2>
+        <p className="mt-4 text-base text-[#696b61]">
+          Sign in with your username, phone, or email.
+        </p>
+        {banner ? <p className="mt-5 text-sm text-[#9b2c2c]">{banner}</p> : null}
         <form
-          className="mt-6 flex flex-col"
+          className="mt-8"
           noValidate
           onSubmit={(event: FormEvent<HTMLFormElement>) => {
             event.preventDefault()
@@ -74,44 +86,37 @@ export function LoginPage() {
               })
           }}
         >
-          <label className="text-sm text-stone-700">
-            账号
-            <Input
-              className="mt-2"
-              size="large"
+          <label className="block text-xs font-semibold">
+            Account
+            <input
+              className="mt-3 h-[58px] w-full rounded-lg border border-[#ddded4] bg-transparent px-4 text-base outline-none"
               autoComplete="username"
               value={account}
               onChange={(event) => setAccount(event.target.value)}
             />
           </label>
-          <label className="mt-5 text-sm text-stone-700">
-            密码
-            <Input.Password
-              className="mt-2"
-              size="large"
+          <label className="mt-7 block text-xs font-semibold">
+            Password
+            <input
+              type="password"
+              className="mt-3 h-[58px] w-full rounded-lg border border-[#ddded4] bg-transparent px-4 text-base outline-none"
               autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
             />
           </label>
-          <Button
-            className="mt-6"
-            type="primary"
-            shape="round"
-            size="large"
-            htmlType="submit"
-            loading={pending}
+          <button
+            type="submit"
+            disabled={pending}
+            className="mt-8 h-[52px] w-full rounded-lg bg-[#191919] text-sm font-semibold text-[#f7f6f0] disabled:opacity-60"
           >
-            登录
-          </Button>
+            {pending ? 'Signing in' : 'Sign in'}
+          </button>
         </form>
-        <p className="mt-6 text-sm text-stone-600">
-          还没有账号？{' '}
-          <Link
-            to="/register"
-            className="text-stone-950 underline decoration-stone-300 underline-offset-4"
-          >
-            注册
+        <p className="mt-6 text-sm leading-relaxed text-[#696b61]">
+          Need an account?{' '}
+          <Link to="/register" className="font-medium text-[#191919]">
+            Register
           </Link>
         </p>
       </div>
