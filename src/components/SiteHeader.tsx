@@ -7,6 +7,7 @@ export function SiteHeader() {
   const home = pathname === '/'
   const status = useSession((s) => s.status)
   const user = useSession((s) => s.user)
+  const username = user?.username?.trim() || user?.nickname?.trim() || '用户'
   const [openPath, setOpenPath] = useState<string | null>(null)
   const open = openPath === pathname
   const links = home
@@ -36,25 +37,36 @@ export function SiteHeader() {
             </NavLink>
           ))}
         </nav>
-        <div className="ml-auto hidden items-center gap-8 text-sm font-medium text-[#191919] xl:flex">
-          {status === 'authenticated' && user ? (
-            <NavLink to="/account" className="max-w-32 truncate">
-              {user.nickname}
+        <div className="ml-auto flex items-center gap-4 text-sm font-medium text-[#191919] xl:gap-8">
+          <div className="hidden items-center gap-8 xl:flex">
+            <NavLink to="/bag">Bag</NavLink>
+            <NavLink
+              to="/studio"
+              className="inline-flex h-12 w-[216px] items-center rounded-lg bg-[#191919] px-[18px] text-sm font-semibold text-[#f7f6f0]"
+            >
+              Start creating ↗
+            </NavLink>
+          </div>
+          {status === 'loading' ? (
+            <span className="inline-block h-8 w-16" />
+          ) : status === 'authenticated' && user ? (
+            <NavLink to="/account" className="flex max-w-40 items-center gap-2">
+              {user.avatar ? (
+                <img src={user.avatar} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
+              ) : (
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#d7fa55] text-xs font-bold">
+                  {username.slice(0, 1).toUpperCase()}
+                </span>
+              )}
+              <span className="truncate">{username}</span>
             </NavLink>
           ) : (
-            <NavLink to="/login">Sign in</NavLink>
+            <NavLink to="/login">未登录</NavLink>
           )}
-          <NavLink to="/bag">Bag</NavLink>
-          <NavLink
-            to="/studio"
-            className="inline-flex h-12 w-[216px] items-center rounded-lg bg-[#191919] px-[18px] text-sm font-semibold text-[#f7f6f0]"
-          >
-            Start creating ↗
-          </NavLink>
         </div>
         <button
           type="button"
-          className="ml-auto text-sm font-medium text-[#191919] xl:hidden"
+          className="ml-4 text-sm font-medium text-[#191919] xl:hidden"
           aria-expanded={open}
           onClick={() => setOpenPath(open ? null : pathname)}
         >
@@ -68,11 +80,6 @@ export function SiteHeader() {
               {link.label}
             </NavLink>
           ))}
-          {status === 'authenticated' && user ? (
-            <NavLink to="/account">{user.nickname}</NavLink>
-          ) : (
-            <NavLink to="/login">Sign in</NavLink>
-          )}
           <NavLink to="/bag">Bag</NavLink>
           <NavLink
             to="/studio"

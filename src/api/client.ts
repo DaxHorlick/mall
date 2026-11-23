@@ -1,9 +1,18 @@
 import { useSession } from '../auth/session.ts'
 
 type ApiBody<T> = {
-  code: string
+  code: number | string
   message: string
   data: T | null
+}
+
+type RequestOptions = RequestInit & { auth?: boolean; skipRefresh?: boolean }
+
+type RefreshResult = {
+  access_token: string
+  refresh_token: string
+  token_type: string
+  expires_in: number
 }
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '')
@@ -56,20 +65,19 @@ function httpMessage(status: number) {
   return '请求失败，请稍后重试'
 }
 
-/** 带 Cookie 的 fetch。`auth: true` 时附带内存中的访问令牌。响应若是 `{ code, message, data }`，返回其中的 data。 */
-export async function request<T>(
-  path: string,
-  init?: RequestInit & { auth?: boolean },
-): Promise<T> {
+/** 发送 JSON 请求。`auth: true` 时附带访问令牌。响应若是 `{ code, message, data }`，返回其中的 data。 */
+export async function request<T>(path: string, init?: RequestOptions): Promise<T> {
   if (!baseUrl) {
     throw new Error('缺少环境变量 VITE_API_BASE_URL')
   }
 
+  const authed = Boolean(init?.auth)
+  const skipRefresh = Boolean(init?.skipRefresh)
   const headers = new Headers(init?.headers)
   if (!headers.has('Accept')) {
     headers.set('Accept', 'application/json')
   }
-  if (init?.auth) {
+  if (authed) {
     const token = useSession.getState().accessToken
     if (token) headers.set('Authorization', `Bearer ${token}`)
   }
@@ -78,12 +86,12 @@ export async function request<T>(
     headers.set('Content-Type', 'application/json')
   }
 
-  const fetchInit: RequestInit & { auth?: boolean } = {
+  const fetchInit: RequestOptions = {
     ...init,
-    credentials: 'include',
     headers,
   }
   delete fetchInit.auth
+  delete fetchInit.skipRefresh
 
   let response: Response
   try {
@@ -110,22 +118,39 @@ export async function request<T>(
     payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : null
   const isEnvelope =
     !!record &&
-    typeof record.code === 'string' &&
+    (typeof record.code === 'number' || typeof record.code === 'string') &&
     typeof record.message === 'string' &&
     'data' in record
 
   if (isEnvelope) {
     const body = payload as ApiBody<T>
-    if (!response.ok || body.code !== 'OK') {
-      if (body.message === '未登录') {
+    const success = body.code === 0 || body.code === 'OK'
+    if (!response.ok || !success) {
+      const unauthorized = response.status === 401 || body.code === 401
+      if (authed && unauthorized && !skipRefresh) {
+        const refreshToken = useSession.getState().refreshToken
+        if (refreshToken) {
+          try {
+            const refreshed = await request<RefreshResult>('/v1/auth/refresh', {
+              method: 'POST',
+              skipRefresh: true,
+              body: JSON.stringify({ refresh_token: refreshToken }),
+            })
+            useSession.getState().setTokens(refreshed.access_token, refreshed.refresh_token)
+          } catch (error) {
+            useSession.getState().signOut(null)
+            throw error
+          }
+          return request<T>(path, { ...init, skipRefresh: true })
+        }
+      }
+      if (authed && unauthorized) {
         useSession.getState().signOut(null)
-      } else if (body.message === '账号不可用') {
-        useSession.getState().signOut('账号不可用')
       }
       throw new ApiError(
         response.status,
         body.message || `请求失败（${response.status}）`,
-        body.code,
+        String(body.code),
         payload,
       )
     }
@@ -137,6 +162,9 @@ export async function request<T>(
       record && typeof record.message === 'string' && record.message.trim()
         ? record.message
         : httpMessage(response.status)
+    if (authed && response.status === 401) {
+      useSession.getState().signOut(null)
+    }
     throw new ApiError(response.status, message, 'UNKNOWN', payload ?? undefined)
   }
 

@@ -20,23 +20,30 @@ export function MainLayout() {
     void bootstrapSession()
   }, [])
 
+  const openToGuests =
+    pathname === '/' ||
+    pathname === '/login' ||
+    pathname === '/register' ||
+    pathname === '/forgot-password' ||
+    pathname === '/reset-password'
+
   useEffect(() => {
     if (status === 'loading') return
-    if (status === 'anonymous' && pathname === '/account') {
+    if (status === 'anonymous' && !openToGuests) {
       navigate('/login', { replace: true })
       return
     }
     if (status === 'authenticated' && (pathname === '/login' || pathname === '/register')) {
       navigate('/account', { replace: true })
     }
-  }, [status, pathname, navigate])
+  }, [status, pathname, navigate, openToGuests])
 
   useEffect(() => {
     if (status === 'anonymous') queryClient.clear()
   }, [status, queryClient])
 
   const redirecting =
-    (status === 'anonymous' && pathname === '/account') ||
+    (status === 'anonymous' && !openToGuests) ||
     (status === 'authenticated' && (pathname === '/login' || pathname === '/register'))
 
   return (
