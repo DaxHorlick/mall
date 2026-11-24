@@ -1,8 +1,10 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useCopy } from '../../i18n/index.ts'
 import { formatEuro, products } from '../../shop/products.ts'
 import { useShop } from '../../shop/store.ts'
 
 export function ProductPage() {
+  const copy = useCopy()
   const { slug } = useParams()
   const navigate = useNavigate()
   const product = products.find((item) => item.slug === slug)
@@ -10,9 +12,9 @@ export function ProductPage() {
   if (!product) {
     return (
       <section className="mx-auto max-w-[1440px] px-5 py-16 md:px-14">
-        <h1 className="text-4xl font-bold">This design is not in the collection.</h1>
+        <h1 className="text-4xl font-bold">{copy.product.missing}</h1>
         <Link to="/explore" className="mt-6 inline-block text-sm font-medium">
-          ← All designs
+          {copy.product.allDesigns}
         </Link>
       </section>
     )
@@ -21,7 +23,7 @@ export function ProductPage() {
   return (
     <section className="mx-auto max-w-[1440px] px-5 py-7 md:px-14">
       <Link to="/explore" className="text-sm font-medium">
-        ← All designs
+        {copy.product.allDesigns}
       </Link>
       <div className="mt-6 grid items-start gap-10 lg:grid-cols-[minmax(0,640px)_minmax(0,1fr)] lg:gap-16">
         <div>
@@ -30,20 +32,20 @@ export function ProductPage() {
             alt=""
             className="aspect-[640/620] w-full rounded-[10px] object-cover"
           />
-          <p className="mt-6 text-[11px] font-bold text-[#696b61]">
-            PRINTED ON DEMAND. NEVER MASS PRODUCED.
-          </p>
+          <p className="mt-6 text-[11px] font-bold text-[#696b61]">{copy.product.printed}</p>
         </div>
         <div className="lg:pt-1">
-          <p className="text-[11px] font-bold">{product.code}</p>
-          <h1 className="mt-4 text-4xl font-semibold leading-tight md:text-[44px]">{product.name}</h1>
-          <p className="mt-5 text-[15px] font-medium text-[#696b61]">by {product.creator}</p>
+          <p className="text-[11px] font-bold">{copy.catalog[product.slug].code}</p>
+          <h1 className="mt-4 text-4xl font-semibold leading-tight md:text-[44px]">
+            {copy.catalog[product.slug].name}
+          </h1>
+          <p className="mt-5 text-[15px] font-medium text-[#696b61]">{copy.common.by(product.creator)}</p>
           <p className="mt-4 text-[32px] font-semibold">{formatEuro(product.priceCents)}</p>
-          <p className="mt-3 text-[13px] text-[#696b61]">
-            Taxes included. Shipping calculated at checkout.
+          <p className="mt-3 text-[13px] text-[#696b61]">{copy.product.taxes}</p>
+          <p className="mt-8 text-xs font-bold">
+            {copy.product.color(copy.catalog[product.slug].color.toUpperCase())}
           </p>
-          <p className="mt-8 text-xs font-bold">COLOR / {product.color.toUpperCase()}</p>
-          <p className="mt-5 text-xs font-bold text-[#191919]/35">DEMO SIZE / M</p>
+          <p className="mt-5 text-xs font-bold text-[#191919]/35">{copy.product.demoSize}</p>
           <div className="mt-3 flex flex-wrap gap-3">
             {product.sizes.map((size) =>
               size === 'M' ? (
@@ -71,15 +73,13 @@ export function ProductPage() {
               navigate('/bag')
             }}
           >
-            {`Add to bag  —  ${formatEuro(product.priceCents)}  ↗`}
+            {copy.product.add(formatEuro(product.priceCents))}
           </button>
-          <p className="mt-4 text-sm text-[#696b61]">
-            This shopping preview uses size M. Other sizes shown for reference.
-          </p>
+          <p className="mt-4 text-sm text-[#696b61]">{copy.product.sizeNote}</p>
           <div className="mt-6 h-px bg-[#ddded4]" />
-          <h2 className="mt-5 text-[17px] font-semibold">The details</h2>
+          <h2 className="mt-5 text-[17px] font-semibold">{copy.product.details}</h2>
           <div className="mt-3 text-[15px] leading-relaxed text-[#696b61]">
-            {product.details.map((line) => (
+            {copy.catalog[product.slug].details.map((line) => (
               <p key={line}>{line}</p>
             ))}
           </div>

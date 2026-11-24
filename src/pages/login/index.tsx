@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getErrorMessage, request } from '../../api/client.ts'
 import { useSession, type User } from '../../auth/session.ts'
 import { AuthPanel } from '../../components/AuthPanel.tsx'
+import { useCopy } from '../../i18n/index.ts'
 
 const fieldClass =
   'mt-3 h-[58px] w-full rounded-lg border border-[#ddded4] bg-transparent px-4 text-base outline-none'
@@ -16,6 +17,7 @@ type LoginResult = {
 }
 
 export function LoginPage() {
+  const copy = useCopy()
   const notice = useSession((s) => s.notice)
   const [account, setAccount] = useState('')
   const [password, setPassword] = useState('')
@@ -27,23 +29,23 @@ export function LoginPage() {
     <AuthPanel
       title={
         <>
-          Good ideas
+          {copy.login.title1}
           <br />
-          start here.
+          {copy.login.title2}
         </>
       }
       lede={
         <>
-          Make something original.
+          {copy.login.lede1}
           <br />
-          Find your people.
+          {copy.login.lede2}
           <br />
-          Wear your kind of weird.
+          {copy.login.lede3}
         </>
       }
     >
-      <h2 className="text-4xl font-semibold">Welcome to Dezajn.</h2>
-      <p className="mt-4 text-base text-[#696b61]">Sign in with your username, phone, or email.</p>
+      <h2 className="text-4xl font-semibold">{copy.login.heading}</h2>
+      <p className="mt-4 text-base text-[#696b61]">{copy.login.lede}</p>
       {banner ? <p className="mt-5 text-sm text-[#9b2c2c]">{banner}</p> : null}
       <form
         className="mt-8"
@@ -52,11 +54,11 @@ export function LoginPage() {
           event.preventDefault()
           const accountValue = account.trim()
           if (!accountValue || !password) {
-            setError('账号或密码不能为空')
+            setError(copy.login.empty)
             return
           }
           if (accountValue.includes('@') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(accountValue)) {
-            setError('邮箱不合法')
+            setError(copy.login.email)
             return
           }
           if (
@@ -64,7 +66,7 @@ export function LoginPage() {
             !/^1\d{10}$/.test(accountValue) &&
             Array.from(accountValue).length > 50
           ) {
-            setError('账号不合法')
+            setError(copy.login.account)
             return
           }
           setError(null)
@@ -75,7 +77,12 @@ export function LoginPage() {
             body: JSON.stringify({ account: accountValue, password }),
           })
             .then((data) => {
-              useSession.getState().signIn(data.access_token, data.refresh_token, data.user)
+              useSession.getState().signIn(
+                data.access_token,
+                data.refresh_token,
+                data.user,
+                data.expires_in,
+              )
             })
             .catch((err: unknown) => {
               setError(getErrorMessage(err))
@@ -86,7 +93,7 @@ export function LoginPage() {
         }}
       >
         <label className="block text-xs font-semibold">
-          Account
+          {copy.login.accountLabel}
           <input
             className={fieldClass}
             autoComplete="username"
@@ -95,7 +102,7 @@ export function LoginPage() {
           />
         </label>
         <label className="mt-7 block text-xs font-semibold">
-          Password
+          {copy.login.password}
           <input
             type="password"
             className={fieldClass}
@@ -109,18 +116,18 @@ export function LoginPage() {
           disabled={pending}
           className="mt-8 h-[52px] w-full rounded-lg bg-[#191919] text-sm font-semibold text-[#f7f6f0] disabled:opacity-60"
         >
-          {pending ? 'Signing in' : 'Sign in'}
+          {pending ? copy.login.pending : copy.login.submit}
         </button>
       </form>
       <p className="mt-6 text-sm leading-relaxed text-[#696b61]">
         <Link to="/forgot-password" className="font-medium text-[#191919]">
-          Forgot password?
+          {copy.login.forgot}
         </Link>
       </p>
       <p className="mt-3 text-sm leading-relaxed text-[#696b61]">
-        Need an account?{' '}
+        {copy.login.need}{' '}
         <Link to="/register" className="font-medium text-[#191919]">
-          Register
+          {copy.login.register}
         </Link>
       </p>
     </AuthPanel>

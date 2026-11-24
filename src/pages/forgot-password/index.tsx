@@ -2,11 +2,13 @@ import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { getErrorMessage, request } from '../../api/client.ts'
 import { AuthPanel } from '../../components/AuthPanel.tsx'
+import { useCopy } from '../../i18n/index.ts'
 
 const fieldClass =
   'mt-3 h-[58px] w-full rounded-lg border border-[#ddded4] bg-transparent px-4 text-base outline-none'
 
 export function ForgotPasswordPage() {
+  const copy = useCopy()
   const [account, setAccount] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -16,21 +18,21 @@ export function ForgotPasswordPage() {
     <AuthPanel
       title={
         <>
-          Locked out?
+          {copy.forgot.title1}
           <br />
-          Start again.
+          {copy.forgot.title2}
         </>
       }
       lede={
         <>
-          Use the email or phone
+          {copy.forgot.lede1}
           <br />
-          on your account.
+          {copy.forgot.lede2}
         </>
       }
     >
-      <h2 className="text-4xl font-semibold">Reset your password.</h2>
-      <p className="mt-4 text-base text-[#696b61]">We accept an email address or a phone number.</p>
+      <h2 className="text-4xl font-semibold">{copy.forgot.heading}</h2>
+      <p className="mt-4 text-base text-[#696b61]">{copy.forgot.lede}</p>
       {error ? <p className="mt-5 text-sm text-[#9b2c2c]">{error}</p> : null}
       {message ? <p className="mt-5 text-sm text-[#191919]">{message}</p> : null}
       <form
@@ -42,7 +44,7 @@ export function ForgotPasswordPage() {
           const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
           const phone = /^\+?\d{8,15}$/.test(value)
           if (!email && !phone) {
-            setError('请填写邮箱或手机号')
+            setError(copy.forgot.invalid)
             setMessage(null)
             return
           }
@@ -54,7 +56,7 @@ export function ForgotPasswordPage() {
             body: JSON.stringify({ account: value }),
           })
             .then(() => {
-              setMessage('如果账号存在，重置说明会发到这个邮箱或手机号。')
+              setMessage(copy.forgot.sent)
             })
             .catch((err: unknown) => {
               setError(getErrorMessage(err))
@@ -65,7 +67,7 @@ export function ForgotPasswordPage() {
         }}
       >
         <label className="block text-xs font-semibold">
-          Email or phone
+          {copy.forgot.label}
           <input
             className={fieldClass}
             autoComplete="username"
@@ -78,13 +80,13 @@ export function ForgotPasswordPage() {
           disabled={pending}
           className="mt-8 h-[52px] w-full rounded-lg bg-[#191919] text-sm font-semibold text-[#f7f6f0] disabled:opacity-60"
         >
-          {pending ? 'Sending' : 'Send reset link'}
+          {pending ? copy.forgot.pending : copy.forgot.submit}
         </button>
       </form>
       <p className="mt-6 text-sm leading-relaxed text-[#696b61]">
-        Remembered it?{' '}
+        {copy.forgot.remembered}{' '}
         <Link to="/login" className="font-medium text-[#191919]">
-          Sign in
+          {copy.forgot.signIn}
         </Link>
       </p>
     </AuthPanel>

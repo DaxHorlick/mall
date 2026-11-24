@@ -1,6 +1,9 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { MainLayout } from '../layouts/MainLayout.tsx'
 import { AccountPage } from '../pages/account/index.tsx'
+import { AddressFormPage } from '../pages/account/address-form.tsx'
+import { AddressesPage } from '../pages/account/addresses.tsx'
+import { EditProfilePage } from '../pages/account/edit.tsx'
 import { BagPage } from '../pages/bag/index.tsx'
 import { CheckoutPage } from '../pages/checkout/index.tsx'
 import { CommunityPage } from '../pages/community/index.tsx'
@@ -16,6 +19,8 @@ import { RegisterPage } from '../pages/register/index.tsx'
 import { ResetPasswordPage } from '../pages/reset-password/index.tsx'
 import { StudioSubmittedPage } from '../pages/studio-submitted/index.tsx'
 import { StudioPage } from '../pages/studio/index.tsx'
+import { PeoplePage } from '../pages/user/people.tsx'
+import { UserPage } from '../pages/user/index.tsx'
 
 export const router = createBrowserRouter([
   {
@@ -35,7 +40,16 @@ export const router = createBrowserRouter([
       { path: '/register', element: <RegisterPage /> },
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
       { path: '/reset-password', element: <ResetPasswordPage /> },
-      { path: '/account', element: <AccountPage /> },
+      { path: '/profile', element: <AccountPage /> },
+      { path: '/profile/edit', element: <EditProfilePage /> },
+      { path: '/profile/addresses', element: <AddressesPage /> },
+      { path: '/profile/addresses/new', element: <AddressFormPage /> },
+      { path: '/profile/addresses/:addressId', element: <AddressFormPage /> },
+      { path: '/profile/following', element: <PeoplePage /> },
+      { path: '/profile/followers', element: <PeoplePage /> },
+      { path: '/users/:userId', element: <UserPage /> },
+      { path: '/users/:userId/following', element: <PeoplePage /> },
+      { path: '/users/:userId/followers', element: <PeoplePage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

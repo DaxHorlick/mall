@@ -1,210 +1,165 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { getErrorMessage, request } from '../../api/client.ts'
-import { useSession, type User } from '../../auth/session.ts'
-import { AuthPanel } from '../../components/AuthPanel.tsx'
-
-const fieldClass =
-  'mt-3 h-[58px] w-full rounded-lg border border-[#ddded4] bg-transparent px-4 text-base outline-none'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { getErrorMessage } from '../../api/client.ts'
+import { useSession } from '../../auth/session.ts'
+import { UserNoCopy } from '../../components/UserNoCopy.tsx'
+import { useCopy } from '../../i18n/index.ts'
+import { fetchMyProfile, statusLabel, type Profile } from '../../profile/api.ts'
 
 export function AccountPage() {
-  const user = useSession((s) => s.user)
+  const copy = useCopy()
+  const sessionUser = useSession((s) => s.user)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [oldPassword, setOldPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [passwordError, setPasswordError] = useState<string | null>(null)
-  const [passwordMessage, setPasswordMessage] = useState<string | null>(null)
-  const [passwordPending, setPasswordPending] = useState(false)
-  const [leaving, setLeaving] = useState(false)
-  const [leavingAll, setLeavingAll] = useState(false)
-  const [logoutError, setLogoutError] = useState<string | null>(null)
-  const created = user?.created_at ? new Date(user.created_at) : null
-  const createdLabel =
-    created && !Number.isNaN(created.getTime())
-      ? created.toLocaleString('zh-CN', { hour12: false })
-      : (user?.created_at ?? '—')
-  const name = user?.nickname?.trim() || user?.username || 'Your account'
+  const [attempt, setAttempt] = useState(0)
+  const shown = profile ?? sessionUser
+  const name = shown?.nickname?.trim() || shown?.username || copy.account.yourProfile
+  const initial = name.slice(0, 1).toUpperCase()
+  const birthdayMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(shown?.birthday ?? '')
+  const birthdayLabel = birthdayMatch
+    ? copy.account.birthday(birthdayMatch[1], birthdayMatch[2], birthdayMatch[3])
+    : ''
+  const facts = [shown?.location?.trim(), birthdayLabel].filter(Boolean).join('  ·  ')
+  const gender = shown?.gender
+  const accountLine = [shown?.email, shown?.phone, statusLabel(shown?.status)]
+    .filter(Boolean)
+    .join('  ·  ')
 
   useEffect(() => {
     let gone = false
-    void request<User>('/v1/auth/me', { auth: true })
+    void fetchMyProfile()
       .then((me) => {
         if (gone) return
-        const { accessToken, refreshToken } = useSession.getState()
-        if (accessToken && refreshToken) useSession.getState().signIn(accessToken, refreshToken, me)
+        setProfile(me)
+        useSession.getState().patchUser({
+          user_id: me.user_id,
+          username: me.username,
+          user_no: me.user_no,
+          nickname: me.nickname,
+          avatar: me.avatar ?? '',
+          cover_image: me.cover_image,
+          bio: me.bio,
+          gender: me.gender,
+          birthday: me.birthday,
+          location: me.location,
+          email: me.email,
+          phone: me.phone,
+          status: me.status,
+          following_count: me.following_count,
+          followers_count: me.followers_count,
+          post_count: me.post_count,
+        })
       })
       .catch((err: unknown) => {
         if (!gone) setLoadError(getErrorMessage(err))
       })
+      .finally(() => {
+        if (!gone) setLoading(false)
+      })
     return () => {
       gone = true
     }
-  }, [])
+  }, [attempt])
 
   return (
-    <AuthPanel
-      title={
-        <>
-          This is
-          <br />
-          your place.
-        </>
-      }
-      lede={
-        <>
-          Your name, your sign-in,
-          <br />
-          and the way back out.
-        </>
-      }
-    >
-      <h2 className="text-4xl font-semibold">{name}</h2>
-      <p className="mt-4 text-base text-[#696b61]">Signed in on this browser.</p>
-      {loadError ? <p className="mt-5 text-sm text-[#9b2c2c]">{loadError}</p> : null}
-      {user?.avatar ? (
-        <img src={user.avatar} alt="" className="mt-8 h-20 w-20 rounded-full object-cover" />
-      ) : null}
-      <dl className="mt-8 grid gap-5 text-sm">
-        <div>
-          <dt className="text-xs font-semibold">Username</dt>
-          <dd className="mt-2 text-base">{user?.username || '—'}</dd>
+    <div className="pb-16">
+      <div className="mx-auto max-w-[1440px] px-5 pt-8 md:px-14">
+        <div className="h-48 overflow-hidden rounded-xl bg-[#eceee3] md:h-72">
+          {shown?.cover_image?.trim() ? (
+            <img src={shown.cover_image} alt="" className="h-full w-full object-cover" />
+          ) : null}
         </div>
-        <div>
-          <dt className="text-xs font-semibold">Email</dt>
-          <dd className="mt-2 text-base">{user?.email || '—'}</dd>
+        <div className="flex flex-col gap-5 px-1 sm:px-4 md:flex-row md:items-end">
+          <div className="-mt-14 flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-[#f7f6f0] bg-[#d7fa55] text-3xl font-bold md:-mt-16 md:h-36 md:w-36">
+            {shown?.avatar?.trim() ? (
+              <img src={shown.avatar} alt="" className="h-full w-full object-cover" />
+            ) : (
+              initial
+            )}
+          </div>
+          <div className="min-w-0 pb-1 md:pb-3">
+            {facts || gender === 1 || gender === 2 || gender === 3 ? (
+              <p className="flex items-center gap-2 text-sm text-[#696b61]">
+                {facts ? <span>{facts}</span> : null}
+                {gender === 1 ? (
+                  <svg viewBox="0 0 16 16" className="h-4 w-4" aria-label={copy.gender.male}>
+                    <circle cx="6.2" cy="10" r="3.1" fill="none" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M8.4 7.8 12.6 3.6M9.6 3.6h3v3" fill="none" stroke="currentColor" strokeWidth="1.4" />
+                  </svg>
+                ) : null}
+                {gender === 2 ? (
+                  <svg viewBox="0 0 16 16" className="h-4 w-4" aria-label={copy.gender.female}>
+                    <circle cx="8" cy="6" r="3.1" fill="none" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M8 9.1V14M6 12h4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+                  </svg>
+                ) : null}
+                {gender === 3 ? (
+                  <svg viewBox="0 0 16 16" className="h-4 w-4" aria-label={copy.gender.other}>
+                    <circle cx="8" cy="8" r="3.1" fill="none" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M8 1.8v2.2M8 12v2.2M1.8 8h2.2M12 8h2.2" fill="none" stroke="currentColor" strokeWidth="1.4" />
+                  </svg>
+                ) : null}
+              </p>
+            ) : null}
+            {accountLine ? <p className="mt-2 text-sm text-[#696b61]">{accountLine}</p> : null}
+            {shown?.bio?.trim() ? (
+              <p className="mt-2 max-w-xl text-base leading-relaxed text-[#696b61]">{shown.bio.trim()}</p>
+            ) : null}
+            <Link to="/profile/edit" className="mt-4 inline-block text-sm font-semibold underline underline-offset-4">
+              {copy.account.edit}
+            </Link>
+          </div>
+          <div className="flex flex-col items-end gap-4 self-end md:mb-3 md:ml-auto">
+            <h1 className="text-right text-4xl font-bold leading-none md:text-5xl">{name}</h1>
+            {shown?.user_no?.trim() ? <UserNoCopy userNo={shown.user_no} /> : null}
+            <dl className="flex gap-10">
+              <Link to="/profile/following">
+                <dt className="text-xs font-bold uppercase text-[#696b61]">{copy.common.following}</dt>
+                <dd className="mt-1 text-2xl font-semibold">{profile ? profile.following_count : '—'}</dd>
+              </Link>
+              <Link to="/profile/followers">
+                <dt className="text-xs font-bold uppercase text-[#696b61]">{copy.common.followers}</dt>
+                <dd className="mt-1 text-2xl font-semibold">{profile ? profile.followers_count : '—'}</dd>
+              </Link>
+              <div>
+                <dt className="text-xs font-bold uppercase text-[#696b61]">{copy.common.posts}</dt>
+                <dd className="mt-1 text-2xl font-semibold">{profile ? profile.post_count : '—'}</dd>
+              </div>
+            </dl>
+          </div>
         </div>
-        <div>
-          <dt className="text-xs font-semibold">Phone</dt>
-          <dd className="mt-2 text-base">{user?.phone || '—'}</dd>
-        </div>
-        <div>
-          <dt className="text-xs font-semibold">Status</dt>
-          <dd className="mt-2 text-base">{user?.status ?? '—'}</dd>
-        </div>
-        <div>
-          <dt className="text-xs font-semibold">Joined</dt>
-          <dd className="mt-2 text-base">{createdLabel}</dd>
-        </div>
-      </dl>
+        {loading ? <p className="mt-6 text-sm text-[#696b61]">{copy.common.loadingProfile}</p> : null}
+        {loadError ? (
+          <div className="mt-6">
+            <p className="text-sm text-[#9b2c2c]">{loadError}</p>
+            <button
+              type="button"
+              className="mt-3 text-sm font-semibold underline underline-offset-4"
+              onClick={() => {
+                setLoading(true)
+                setLoadError(null)
+                setAttempt((current) => current + 1)
+              }}
+            >
+              {copy.common.tryAgain}
+            </button>
+          </div>
+        ) : null}
+      </div>
 
-      <h2 className="mt-12 text-4xl font-semibold">Password</h2>
-      {passwordError ? <p className="mt-5 text-sm text-[#9b2c2c]">{passwordError}</p> : null}
-      {passwordMessage ? <p className="mt-5 text-sm text-[#191919]">{passwordMessage}</p> : null}
-      <form
-        className="mt-8"
-        noValidate
-        onSubmit={(event: FormEvent<HTMLFormElement>) => {
-          event.preventDefault()
-          if (!oldPassword || !newPassword) {
-            setPasswordError('旧密码和新密码不能为空')
-            setPasswordMessage(null)
-            return
-          }
-          setPasswordError(null)
-          setPasswordMessage(null)
-          setPasswordPending(true)
-          void request<{ success: boolean }>('/v1/auth/change-password', {
-            method: 'POST',
-            auth: true,
-            body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
-          })
-            .then(() => {
-              setOldPassword('')
-              setNewPassword('')
-              setPasswordMessage('密码已更新')
-            })
-            .catch((err: unknown) => {
-              setPasswordError(getErrorMessage(err))
-            })
-            .finally(() => {
-              setPasswordPending(false)
-            })
-        }}
-      >
-        <label className="block text-xs font-semibold">
-          Current password
-          <input
-            type="password"
-            className={fieldClass}
-            autoComplete="current-password"
-            value={oldPassword}
-            onChange={(event) => setOldPassword(event.target.value)}
-          />
-        </label>
-        <label className="mt-7 block text-xs font-semibold">
-          New password
-          <input
-            type="password"
-            className={fieldClass}
-            autoComplete="new-password"
-            value={newPassword}
-            onChange={(event) => setNewPassword(event.target.value)}
-          />
-        </label>
-        <button
-          type="submit"
-          disabled={passwordPending}
-          className="mt-8 h-[52px] w-full rounded-lg bg-[#191919] text-sm font-semibold text-[#f7f6f0] disabled:opacity-60"
-        >
-          {passwordPending ? 'Updating' : 'Update password'}
-        </button>
-      </form>
-
-      <h2 className="mt-12 text-4xl font-semibold">Sign out</h2>
-      {logoutError ? <p className="mt-5 text-sm text-[#9b2c2c]">{logoutError}</p> : null}
-      <button
-        type="button"
-        disabled={leaving || leavingAll}
-        className="mt-8 h-[52px] w-full rounded-lg bg-[#191919] text-sm font-semibold text-[#f7f6f0] disabled:opacity-60"
-        onClick={() => {
-          const refreshToken = useSession.getState().refreshToken
-          if (!refreshToken) {
-            useSession.getState().signOut(null)
-            return
-          }
-          setLogoutError(null)
-          setLeaving(true)
-          void request<{ success: boolean }>('/v1/auth/logout', {
-            method: 'POST',
-            auth: true,
-            skipRefresh: true,
-            body: JSON.stringify({ refresh_token: refreshToken }),
-          })
-            .then(() => {
-              useSession.getState().signOut(null)
-            })
-            .catch((err: unknown) => {
-              if (useSession.getState().status === 'anonymous') return
-              setLogoutError(getErrorMessage(err))
-              setLeaving(false)
-            })
-        }}
-      >
-        {leaving ? 'Signing out' : 'Sign out'}
-      </button>
-      <button
-        type="button"
-        disabled={leaving || leavingAll}
-        className="mt-3 h-[52px] w-full rounded-lg border border-[#c5c6bc] bg-transparent text-sm font-semibold disabled:opacity-60"
-        onClick={() => {
-          setLogoutError(null)
-          setLeavingAll(true)
-          void request<{ success: boolean }>('/v1/auth/logout-all', {
-            method: 'POST',
-            auth: true,
-            skipRefresh: true,
-          })
-            .then(() => {
-              useSession.getState().signOut(null)
-            })
-            .catch((err: unknown) => {
-              if (useSession.getState().status === 'anonymous') return
-              setLogoutError(getErrorMessage(err))
-              setLeavingAll(false)
-            })
-        }}
-      >
-        {leavingAll ? 'Signing out' : 'Sign out of all devices'}
-      </button>
-    </AuthPanel>
+      <div className="mx-auto mt-12 grid max-w-[1440px] gap-8 px-5 md:px-14 lg:grid-cols-2">
+        <section className="rounded-xl bg-[#eceee3] px-7 py-8">
+          <p className="text-[11px] font-bold">{copy.account.designs}</p>
+          <h2 className="mt-3 text-3xl font-semibold">{copy.account.designsTitle}</h2>
+          <p className="mt-4 max-w-sm text-sm leading-relaxed text-[#696b61]">{copy.account.designsBody}</p>
+        </section>
+        <section className="rounded-xl border border-[#ddded4] px-7 py-8">
+          <p className="text-[11px] font-bold">{copy.account.made}</p>
+          <h2 className="mt-3 text-3xl font-semibold">{copy.account.madeTitle}</h2>
+          <p className="mt-4 max-w-sm text-sm leading-relaxed text-[#696b61]">{copy.account.madeBody}</p>
+        </section>
+      </div>
+    </div>
   )
 }

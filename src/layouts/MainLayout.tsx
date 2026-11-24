@@ -5,11 +5,13 @@ import { bootstrapSession } from '../auth/bootstrap.ts'
 import { useSession } from '../auth/session.ts'
 import { SiteFooter } from '../components/SiteFooter.tsx'
 import { SiteHeader } from '../components/SiteHeader.tsx'
+import { useCopy } from '../i18n/index.ts'
 
 export function MainLayout() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const copy = useCopy()
   const status = useSession((s) => s.status)
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export function MainLayout() {
       return
     }
     if (status === 'authenticated' && (pathname === '/login' || pathname === '/register')) {
-      navigate('/account', { replace: true })
+      navigate('/profile', { replace: true })
     }
   }, [status, pathname, navigate, openToGuests])
 
@@ -53,10 +55,10 @@ export function MainLayout() {
         {status === 'loading' || redirecting ? (
           <p className="mx-auto max-w-[1440px] px-5 py-16 text-sm text-[#696b61] md:px-14">
             {status === 'loading'
-              ? 'Restoring your session'
+              ? copy.layout.restoring
               : status === 'authenticated'
-                ? 'Opening your account'
-                : 'Opening sign in'}
+                ? copy.layout.openingAccount
+                : copy.layout.openingSignIn}
           </p>
         ) : (
           <Outlet />

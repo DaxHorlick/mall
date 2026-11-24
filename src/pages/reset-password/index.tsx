@@ -3,11 +3,13 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { getErrorMessage, request } from '../../api/client.ts'
 import { useSession } from '../../auth/session.ts'
 import { AuthPanel } from '../../components/AuthPanel.tsx'
+import { useCopy } from '../../i18n/index.ts'
 
 const fieldClass =
   'mt-3 h-[58px] w-full rounded-lg border border-[#ddded4] bg-transparent px-4 text-base outline-none'
 
 export function ResetPasswordPage() {
+  const copy = useCopy()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const tokenFromLink = params.get('token') ?? ''
@@ -20,22 +22,22 @@ export function ResetPasswordPage() {
     <AuthPanel
       title={
         <>
-          Pick a new
+          {copy.reset.title1}
           <br />
-          password.
+          {copy.reset.title2}
         </>
       }
       lede={
         <>
-          Then sign in and
+          {copy.reset.lede1}
           <br />
-          get back to it.
+          {copy.reset.lede2}
         </>
       }
     >
-      <h2 className="text-4xl font-semibold">Choose a new password.</h2>
+      <h2 className="text-4xl font-semibold">{copy.reset.heading}</h2>
       <p className="mt-4 text-base text-[#696b61]">
-        {tokenFromLink ? 'This page is using the token from your reset link.' : 'Paste the token from your reset link.'}
+        {tokenFromLink ? copy.reset.usingToken : copy.reset.pasteToken}
       </p>
       {error ? <p className="mt-5 text-sm text-[#9b2c2c]">{error}</p> : null}
       <form
@@ -45,11 +47,11 @@ export function ResetPasswordPage() {
           event.preventDefault()
           const tokenValue = token.trim()
           if (!tokenValue) {
-            setError('令牌不能为空')
+            setError(copy.reset.emptyToken)
             return
           }
           if (!password) {
-            setError('新密码不能为空')
+            setError(copy.reset.emptyPassword)
             return
           }
           setError(null)
@@ -59,7 +61,7 @@ export function ResetPasswordPage() {
             body: JSON.stringify({ token: tokenValue, new_password: password }),
           })
             .then(() => {
-              useSession.getState().signOut('密码已重置，请登录')
+              useSession.getState().signOut(copy.reset.done)
               navigate('/login')
             })
             .catch((err: unknown) => {
@@ -72,7 +74,7 @@ export function ResetPasswordPage() {
       >
         {tokenFromLink ? null : (
           <label className="block text-xs font-semibold">
-            Token
+            {copy.reset.token}
             <input
               className={fieldClass}
               autoComplete="off"
@@ -82,7 +84,7 @@ export function ResetPasswordPage() {
           </label>
         )}
         <label className={`${tokenFromLink ? '' : 'mt-7'} block text-xs font-semibold`}>
-          New password
+          {copy.reset.password}
           <input
             type="password"
             className={fieldClass}
@@ -96,12 +98,12 @@ export function ResetPasswordPage() {
           disabled={pending}
           className="mt-8 h-[52px] w-full rounded-lg bg-[#191919] text-sm font-semibold text-[#f7f6f0] disabled:opacity-60"
         >
-          {pending ? 'Saving' : 'Save password'}
+          {pending ? copy.reset.pending : copy.reset.submit}
         </button>
       </form>
       <p className="mt-6 text-sm leading-relaxed text-[#696b61]">
         <Link to="/login" className="font-medium text-[#191919]">
-          Back to sign in
+          {copy.reset.back}
         </Link>
       </p>
     </AuthPanel>

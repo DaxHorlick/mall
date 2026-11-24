@@ -1,3 +1,4 @@
+import type { CatalogSlug } from '../i18n/zh.ts'
 import campaign from '../assets/campaign.png'
 import emptyBag from '../assets/empty-bag.png'
 import hoodie from '../assets/hoodie.png'
@@ -6,7 +7,7 @@ import teeFlower from '../assets/tee-flower.png'
 import teeSun from '../assets/tee-sun.png'
 
 export type Product = {
-  slug: string
+  slug: CatalogSlug
   name: string
   creator: string
   code: string

@@ -1,9 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useCopy } from '../../i18n/index.ts'
 import { formatEuro, goodsCents, products, shippingCents } from '../../shop/products.ts'
 import { useShop } from '../../shop/store.ts'
 
 export function CheckoutPage() {
+  const copy = useCopy()
   const navigate = useNavigate()
   const lines = useShop((s) => s.lines)
   const order = useShop((s) => s.order)
@@ -26,12 +28,10 @@ export function CheckoutPage() {
   return (
     <section className="mx-auto max-w-[1440px] px-5 py-7 md:px-14">
       <Link to="/bag" className="text-sm font-medium">
-        ← Back to bag
+        {copy.checkout.back}
       </Link>
-      <h1 className="mt-5 text-5xl font-bold md:text-[56px]">Almost yours.</h1>
-      <p className="mt-3 text-[11px] font-bold text-[#696b61]">
-        PROTOTYPE CHECKOUT / SAMPLE DETAILS · NO PAYMENT WILL BE TAKEN
-      </p>
+      <h1 className="mt-5 text-5xl font-bold md:text-[56px]">{copy.checkout.title}</h1>
+      <p className="mt-3 text-[11px] font-bold text-[#696b61]">{copy.checkout.note}</p>
       <div className="mt-10 grid items-start gap-10 lg:grid-cols-[minmax(0,760px)_minmax(0,464px)] lg:justify-between">
         <form
           id="checkout-form"
@@ -39,7 +39,7 @@ export function CheckoutPage() {
           onSubmit={(event: FormEvent<HTMLFormElement>) => {
             event.preventDefault()
             if (![email, firstName, lastName, street, city, postal].every((value) => value.trim())) {
-              setError('Please complete the delivery details.')
+              setError(copy.checkout.incomplete)
               return
             }
             setError(null)
@@ -47,9 +47,9 @@ export function CheckoutPage() {
             navigate('/order')
           }}
         >
-          <h2 className="text-[25px] font-semibold">01 / Contact & delivery</h2>
+          <h2 className="text-[25px] font-semibold">{copy.checkout.contact}</h2>
           <label className="mt-7 block text-xs font-semibold text-[#696b61]">
-            Email
+            {copy.checkout.email}
             <input
               className="mt-2 h-[52px] w-full rounded-md border border-[#ddded4] bg-transparent px-4 text-[15px] text-[#191919] outline-none"
               value={email}
@@ -59,7 +59,7 @@ export function CheckoutPage() {
           </label>
           <div className="mt-6 grid gap-6 sm:grid-cols-2">
             <label className="block text-xs font-semibold text-[#696b61]">
-              First name
+              {copy.checkout.firstName}
               <input
                 className="mt-2 h-[52px] w-full rounded-md border border-[#ddded4] bg-transparent px-4 text-[15px] text-[#191919] outline-none"
                 value={firstName}
@@ -68,7 +68,7 @@ export function CheckoutPage() {
               />
             </label>
             <label className="block text-xs font-semibold text-[#696b61]">
-              Last name
+              {copy.checkout.lastName}
               <input
                 className="mt-2 h-[52px] w-full rounded-md border border-[#ddded4] bg-transparent px-4 text-[15px] text-[#191919] outline-none"
                 value={lastName}
@@ -78,7 +78,7 @@ export function CheckoutPage() {
             </label>
           </div>
           <label className="mt-6 block text-xs font-semibold text-[#696b61]">
-            Street address
+            {copy.checkout.street}
             <input
               className="mt-2 h-[52px] w-full rounded-md border border-[#ddded4] bg-transparent px-4 text-[15px] text-[#191919] outline-none"
               value={street}
@@ -88,7 +88,7 @@ export function CheckoutPage() {
           </label>
           <div className="mt-6 grid gap-6 sm:grid-cols-2">
             <label className="block text-xs font-semibold text-[#696b61]">
-              City
+              {copy.checkout.city}
               <input
                 className="mt-2 h-[52px] w-full rounded-md border border-[#ddded4] bg-transparent px-4 text-[15px] text-[#191919] outline-none"
                 value={city}
@@ -97,7 +97,7 @@ export function CheckoutPage() {
               />
             </label>
             <label className="block text-xs font-semibold text-[#696b61]">
-              Postal code
+              {copy.checkout.postal}
               <input
                 className="mt-2 h-[52px] w-full rounded-md border border-[#ddded4] bg-transparent px-4 text-[15px] text-[#191919] outline-none"
                 value={postal}
@@ -106,15 +106,15 @@ export function CheckoutPage() {
               />
             </label>
           </div>
-          <p className="mt-6 text-sm font-medium">Country / Germany</p>
-          <h2 className="mt-8 text-xl font-semibold">02 / Standard delivery · €4.90</h2>
-          <p className="mt-3 text-sm text-[#696b61]">
-            Printed in 3–5 business days, then delivered in 2–4 days.
-          </p>
+          <p className="mt-6 text-sm font-medium">{copy.checkout.country}</p>
+          <h2 className="mt-8 text-xl font-semibold">
+            02 / {copy.checkout.delivery} · {formatEuro(shippingCents, true)}
+          </h2>
+          <p className="mt-3 text-sm text-[#696b61]">{copy.checkout.deliveryNote}</p>
           {error ? <p className="mt-4 text-sm text-[#9b2c2c]">{error}</p> : null}
         </form>
         <aside className="rounded-[10px] bg-[#eceee3] p-7">
-          <h2 className="text-[23px] font-semibold">Your original, on its way.</h2>
+          <h2 className="text-[23px] font-semibold">{copy.checkout.summary}</h2>
           {lines.map((line) => {
             const product = products.find((item) => item.slug === line.slug)
             if (!product) return null
@@ -122,27 +122,27 @@ export function CheckoutPage() {
               <div key={line.slug} className="mt-6 flex gap-5">
                 <img src={product.image} alt="" className="h-32 w-[120px] rounded-lg object-cover" />
                 <div>
-                  <p className="text-lg font-semibold">{product.name}</p>
+                  <p className="text-lg font-semibold">{copy.catalog[product.slug].name}</p>
                   <p className="mt-4 text-[13px]">
-                    <span>Size</span>
+                    <span>{copy.bag.size}</span>
                     <span className="ml-3">M</span>
                   </p>
-                  <p className="mt-2 text-[13px]">{product.color}</p>
+                  <p className="mt-2 text-[13px]">{copy.catalog[product.slug].color}</p>
                 </div>
               </div>
             )
           })}
           <div className="mt-6 flex items-center justify-between text-[15px]">
-            <p>Subtotal</p>
+            <p>{copy.bag.subtotal}</p>
             <p className="font-medium">{formatEuro(subtotal, true)}</p>
           </div>
           <div className="mt-4 flex items-center justify-between text-[15px]">
-            <p>Shipping</p>
+            <p>{copy.bag.shipping}</p>
             <p className="font-medium">{formatEuro(shippingCents, true)}</p>
           </div>
           <div className="mt-5 h-px bg-[#ddded4]" />
           <div className="mt-5 flex items-center justify-between">
-            <p className="text-[22px] font-semibold">Total</p>
+            <p className="text-[22px] font-semibold">{copy.bag.total}</p>
             <p className="text-[25px] font-semibold">{formatEuro(total, true)}</p>
           </div>
           <button
@@ -150,12 +150,12 @@ export function CheckoutPage() {
             form="checkout-form"
             className="mt-7 h-[52px] w-full rounded-lg bg-[#191919] text-sm font-semibold text-[#f7f6f0]"
           >
-            Place demo order ↗
+            {copy.checkout.place}
           </button>
           <p className="mt-5 text-[13px] leading-relaxed text-[#696b61]">
-            Demo only. No card details needed.
+            {copy.checkout.demo1}
             <br />
-            Your sample order will not be fulfilled.
+            {copy.checkout.demo2}
           </p>
         </aside>
       </div>

@@ -1,7 +1,11 @@
 import { Link } from 'react-router-dom'
+import { useCopy } from '../i18n/index.ts'
 import { formatEuro, type Product } from '../shop/products.ts'
 
-export function ProductCard({ product, tag }: { product: Product; tag: string }) {
+export function ProductCard({ product, place }: { product: Product; place: 'home' | 'explore' }) {
+  const copy = useCopy()
+  const text = copy.catalog[product.slug]
+  const tag = place === 'home' ? text.homeTag : text.tag
   return (
     <article>
       <Link to={`/products/${product.slug}`} className="relative block">
@@ -16,12 +20,12 @@ export function ProductCard({ product, tag }: { product: Product; tag: string })
       </Link>
       <div className="mt-5 flex items-start justify-between gap-4">
         <Link to={`/products/${product.slug}`} className="text-[19px] font-semibold leading-snug">
-          {product.name}
+          {text.name}
         </Link>
         <p className="shrink-0 text-[17px] font-semibold">{formatEuro(product.priceCents)}</p>
       </div>
-      <p className="mt-2 text-[13px] text-[#696b61]">by {product.creator}</p>
-      <p className="mt-1.5 text-xs text-[#696b61]">{product.material}</p>
+      <p className="mt-2 text-[13px] text-[#696b61]">{copy.common.by(product.creator)}</p>
+      <p className="mt-1.5 text-xs text-[#696b61]">{text.material}</p>
     </article>
   )
 }

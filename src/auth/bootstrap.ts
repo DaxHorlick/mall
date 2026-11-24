@@ -1,5 +1,5 @@
 import { ApiError, getErrorMessage, request } from '../api/client.ts'
-import { storedRefreshToken, useSession, type User } from './session.ts'
+import { storedAccessToken, storedRefreshToken, storedUser, useSession, type User } from './session.ts'
 
 let pending: Promise<void> | null = null
 
@@ -13,19 +13,40 @@ type RefreshResult = {
 export function bootstrapSession() {
   if (pending) return pending
   pending = (async () => {
+    if (useSession.getState().status !== 'loading') return
     const refreshToken = storedRefreshToken()
-    if (!refreshToken) {
-      if (useSession.getState().status === 'loading') useSession.getState().signOut(null)
+    const accessToken = storedAccessToken()
+    if (!refreshToken && !accessToken) {
+      useSession.getState().signOut(null)
       return
     }
     try {
-      const refreshed = await request<RefreshResult>('/v1/auth/refresh', {
-        method: 'POST',
-        body: JSON.stringify({ refresh_token: refreshToken }),
-      })
-      useSession.getState().setTokens(refreshed.access_token, refreshed.refresh_token)
-      const me = await request<User>('/v1/auth/me', { auth: true })
-      useSession.getState().signIn(refreshed.access_token, refreshed.refresh_token, me)
+      let nextAccess = accessToken
+      let nextRefresh = refreshToken
+      if (!nextAccess) {
+        const refreshed = await request<RefreshResult>('/v1/auth/refresh', {
+          method: 'POST',
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        })
+        nextAccess = refreshed.access_token
+        nextRefresh = refreshed.refresh_token
+        useSession.getState().setTokens(nextAccess, nextRefresh, refreshed.expires_in)
+      } else {
+        useSession.getState().setTokens(nextAccess, nextRefresh ?? '')
+      }
+      const cached = storedUser()
+      const latest = useSession.getState()
+      if (cached) {
+        useSession.getState().signIn(
+          latest.accessToken ?? nextAccess,
+          latest.refreshToken ?? nextRefresh ?? '',
+          cached,
+        )
+        return
+      }
+      const me = await request<User>('/v1/users/me', { auth: true })
+      const after = useSession.getState()
+      useSession.getState().signIn(after.accessToken ?? nextAccess, after.refreshToken ?? nextRefresh ?? '', me)
     } catch (error) {
       if (useSession.getState().status !== 'loading') return
       const expired =

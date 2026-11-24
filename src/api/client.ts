@@ -1,4 +1,5 @@
 import { useSession } from '../auth/session.ts'
+import { copy } from '../i18n/index.ts'
 
 type ApiBody<T> = {
   code: number | string
@@ -31,7 +32,7 @@ export class ApiError extends Error {
   }
 }
 
-export function getErrorMessage(error: unknown, fallback = '请求失败，请稍后重试') {
+export function getErrorMessage(error: unknown, fallback = copy().errors.retry) {
   if (error instanceof ApiError) {
     return error.message
   }
@@ -56,19 +57,16 @@ export function toQueryString(
 }
 
 function httpMessage(status: number) {
-  if (status === 500) {
-    return '内部错误'
-  }
-  if (status === 503) {
-    return '服务暂时不可用'
-  }
-  return '请求失败，请稍后重试'
+  const errors = copy().errors
+  if (status === 500) return errors.internal
+  if (status === 503) return errors.unavailable
+  return errors.retry
 }
 
 /** 发送 JSON 请求。`auth: true` 时附带访问令牌。响应若是 `{ code, message, data }`，返回其中的 data。 */
 export async function request<T>(path: string, init?: RequestOptions): Promise<T> {
   if (!baseUrl) {
-    throw new Error('缺少环境变量 VITE_API_BASE_URL')
+    throw new Error(copy().errors.missingEnv)
   }
 
   const authed = Boolean(init?.auth)
@@ -97,7 +95,7 @@ export async function request<T>(path: string, init?: RequestOptions): Promise<T
   try {
     response = await fetch(`${baseUrl}${path}`, fetchInit)
   } catch {
-    throw new ApiError(0, '网络异常，请检查连接后重试')
+    throw new ApiError(0, copy().errors.network)
   }
 
   if (response.status === 204) {
@@ -126,7 +124,8 @@ export async function request<T>(path: string, init?: RequestOptions): Promise<T
     const body = payload as ApiBody<T>
     const success = body.code === 0 || body.code === 'OK'
     if (!response.ok || !success) {
-      const unauthorized = response.status === 401 || body.code === 401
+      const unauthorized =
+        response.status === 401 || body.code === 401 || body.code === 40100 || body.code === '40100'
       if (authed && unauthorized && !skipRefresh) {
         const refreshToken = useSession.getState().refreshToken
         if (refreshToken) {
@@ -136,7 +135,11 @@ export async function request<T>(path: string, init?: RequestOptions): Promise<T
               skipRefresh: true,
               body: JSON.stringify({ refresh_token: refreshToken }),
             })
-            useSession.getState().setTokens(refreshed.access_token, refreshed.refresh_token)
+            useSession.getState().setTokens(
+              refreshed.access_token,
+              refreshed.refresh_token,
+              refreshed.expires_in,
+            )
           } catch (error) {
             useSession.getState().signOut(null)
             throw error
@@ -149,12 +152,21 @@ export async function request<T>(path: string, init?: RequestOptions): Promise<T
       }
       throw new ApiError(
         response.status,
-        body.message || `请求失败（${response.status}）`,
+        body.message || copy().errors.failedStatus(response.status),
         String(body.code),
         payload,
       )
     }
     return body.data as T
+  }
+
+  if (
+    response.ok &&
+    record &&
+    (record.code === 0 || record.code === '0' || record.code === 'OK') &&
+    typeof record.message === 'string'
+  ) {
+    return undefined as T
   }
 
   if (!response.ok) {

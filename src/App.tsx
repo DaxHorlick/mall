@@ -1,13 +1,16 @@
 import { StyleProvider } from '@ant-design/cssinjs'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { App as AntdApp, ConfigProvider } from 'antd'
+import enUS from 'antd/locale/en_US'
 import zhCN from 'antd/locale/zh_CN'
 import { useState } from 'react'
 import { RouterProvider } from 'react-router-dom'
 import { ApiError } from './api/client.ts'
+import { useLocale } from './i18n/locale.ts'
 import { router } from './router/index.tsx'
 
 export default function App() {
+  const locale = useLocale((state) => state.locale)
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -42,7 +45,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <StyleProvider layer>
         <ConfigProvider
-          locale={zhCN}
+          locale={locale === 'zh' ? zhCN : enUS}
           theme={{
             token: {
               colorPrimary: '#17181b',

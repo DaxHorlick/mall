@@ -3,11 +3,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { getErrorMessage, request } from '../../api/client.ts'
 import { useSession } from '../../auth/session.ts'
 import { AuthPanel } from '../../components/AuthPanel.tsx'
+import { useCopy } from '../../i18n/index.ts'
 
 const fieldClass =
   'mt-3 h-[58px] w-full rounded-lg border border-[#ddded4] bg-transparent px-4 text-base outline-none'
 
 export function RegisterPage() {
+  const text = useCopy()
   const navigate = useNavigate()
   const notice = useSession((s) => s.notice)
   const [username, setUsername] = useState('')
@@ -22,21 +24,21 @@ export function RegisterPage() {
     <AuthPanel
       title={
         <>
-          Join the
+          {text.register.title1}
           <br />
-          weird ones.
+          {text.register.title2}
         </>
       }
       lede={
         <>
-          A username and a password.
+          {text.register.lede1}
           <br />
-          Email and phone can wait.
+          {text.register.lede2}
         </>
       }
     >
-      <h2 className="text-4xl font-semibold">Create your account.</h2>
-      <p className="mt-4 text-base text-[#696b61]">Email and phone are optional.</p>
+      <h2 className="text-4xl font-semibold">{text.register.heading}</h2>
+      <p className="mt-4 text-base text-[#696b61]">{text.register.lede}</p>
       {banner ? <p className="mt-5 text-sm text-[#9b2c2c]">{banner}</p> : null}
       <form
         className="mt-8"
@@ -47,15 +49,15 @@ export function RegisterPage() {
           const emailValue = email.trim()
           const phoneValue = phone.trim()
           if (!name || !password) {
-            setError('用户名和密码不能为空')
+            setError(text.register.empty)
             return
           }
           if (/\s/u.test(name) || name.includes('@') || Array.from(name).length > 50) {
-            setError('用户名不合法')
+            setError(text.register.username)
             return
           }
           if (emailValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
-            setError('邮箱不合法')
+            setError(text.register.email)
             return
           }
           const body: { username: string; password: string; email?: string; phone?: string } = {
@@ -72,7 +74,7 @@ export function RegisterPage() {
             body: JSON.stringify(body),
           })
             .then(() => {
-              useSession.getState().setNotice('账号已创建，请登录')
+              useSession.getState().setNotice(text.register.created)
               navigate('/login')
             })
             .catch((err: unknown) => {
@@ -84,7 +86,7 @@ export function RegisterPage() {
         }}
       >
         <label className="block text-xs font-semibold">
-          Username
+          {text.register.usernameLabel}
           <input
             className={fieldClass}
             autoComplete="username"
@@ -93,7 +95,7 @@ export function RegisterPage() {
           />
         </label>
         <label className="mt-7 block text-xs font-semibold">
-          Email
+          {text.register.emailLabel}
           <input
             type="email"
             className={fieldClass}
@@ -103,7 +105,7 @@ export function RegisterPage() {
           />
         </label>
         <label className="mt-7 block text-xs font-semibold">
-          Phone
+          {text.register.phone}
           <input
             className={fieldClass}
             inputMode="tel"
@@ -113,7 +115,7 @@ export function RegisterPage() {
           />
         </label>
         <label className="mt-7 block text-xs font-semibold">
-          Password
+          {text.register.password}
           <input
             type="password"
             className={fieldClass}
@@ -127,13 +129,13 @@ export function RegisterPage() {
           disabled={pending}
           className="mt-8 h-[52px] w-full rounded-lg bg-[#191919] text-sm font-semibold text-[#f7f6f0] disabled:opacity-60"
         >
-          {pending ? 'Creating account' : 'Create account'}
+          {pending ? text.register.pending : text.register.submit}
         </button>
       </form>
       <p className="mt-6 text-sm leading-relaxed text-[#696b61]">
-        Already registered?{' '}
+        {text.register.already}{' '}
         <Link to="/login" className="font-medium text-[#191919]">
-          Sign in
+          {text.register.signIn}
         </Link>
       </p>
     </AuthPanel>
