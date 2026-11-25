@@ -35,6 +35,8 @@ export const en: Messages = {
     signOut: 'Sign out',
     signingOut: 'Signing out',
     signIn: 'Sign in',
+    search: 'Find people',
+    designer: '3D designer',
   },
   password: {
     title: 'Change password',
@@ -248,6 +250,7 @@ export const en: Messages = {
     finish1: 'Organic cotton tee · Unisex fit',
     finish2: 'Garment color follows the selected sample.',
     preview: 'Preview submission ↗',
+    designer: 'Open the 3D designer',
     demo: 'Demo workspace. This will not publish a real listing.',
     doneEyebrow: 'DEMO SUBMISSION / PREVIEW COMPLETE',
     doneTitle: 'That idea looks good on you.',
@@ -424,6 +427,14 @@ export const en: Messages = {
   },
   people: {
     empty: 'No one here yet.',
+  },
+  search: {
+    title: 'Search people',
+    placeholder: 'Username, user number, or nickname',
+    submit: 'Search',
+    emptyKeyword: 'Enter a search keyword',
+    keywordMax: 'Keyword can be at most 50 characters',
+    empty: 'No one matched.',
   },
   user: {
     profile: 'Profile',

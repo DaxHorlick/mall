@@ -98,6 +98,12 @@ export function SiteHeader() {
                   <NavLink to="/profile" className="block px-4 py-2.5 hover:bg-[#eceee3]">
                     {copy.nav.account}
                   </NavLink>
+                  <NavLink to="/search" className="block px-4 py-2.5 hover:bg-[#eceee3]">
+                    {copy.nav.search}
+                  </NavLink>
+                  <NavLink to="/designer" className="block px-4 py-2.5 hover:bg-[#eceee3]">
+                    {copy.nav.designer}
+                  </NavLink>
                   <NavLink to="/profile/addresses" className="block px-4 py-2.5 hover:bg-[#eceee3]">
                     {copy.nav.addresses}
                   </NavLink>

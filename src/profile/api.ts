@@ -91,6 +91,12 @@ export function fetchPeople(path: string, page: number) {
   return request<UserList>(`${path}${toQueryString({ page, page_size: 20 })}`, { auth: true })
 }
 
+export function searchUsers(keyword: string, page: number) {
+  return request<UserList>(`/v1/users/search${toQueryString({ keyword, page, page_size: 20 })}`, {
+    auth: true,
+  })
+}
+
 export function genderLabel(gender?: number) {
   const label = copy().gender
   if (gender === 1) return label.male

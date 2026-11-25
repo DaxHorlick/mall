@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { MainLayout } from '../layouts/MainLayout.tsx'
+import { DesignerPage } from '../modules/designer/pages/DesignerPage.tsx'
 import { AccountPage } from '../pages/account/index.tsx'
 import { AddressFormPage } from '../pages/account/address-form.tsx'
 import { AddressesPage } from '../pages/account/addresses.tsx'
@@ -20,9 +21,12 @@ import { ResetPasswordPage } from '../pages/reset-password/index.tsx'
 import { StudioSubmittedPage } from '../pages/studio-submitted/index.tsx'
 import { StudioPage } from '../pages/studio/index.tsx'
 import { PeoplePage } from '../pages/user/people.tsx'
+import { SearchPage } from '../pages/user/search.tsx'
 import { UserPage } from '../pages/user/index.tsx'
 
 export const router = createBrowserRouter([
+  { path: '/designer', element: <DesignerPage /> },
+  { path: '/designer/:designId', element: <DesignerPage /> },
   {
     element: <MainLayout />,
     children: [
@@ -47,6 +51,7 @@ export const router = createBrowserRouter([
       { path: '/profile/addresses/:addressId', element: <AddressFormPage /> },
       { path: '/profile/following', element: <PeoplePage /> },
       { path: '/profile/followers', element: <PeoplePage /> },
+      { path: '/search', element: <SearchPage /> },
       { path: '/users/:userId', element: <UserPage /> },
       { path: '/users/:userId/following', element: <PeoplePage /> },
       { path: '/users/:userId/followers', element: <PeoplePage /> },

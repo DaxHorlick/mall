@@ -33,6 +33,8 @@ export const zh = {
     signOut: '退出',
     signingOut: '正在退出',
     signIn: '登录',
+    search: '找人',
+    designer: '3D 设计器',
   },
   password: {
     title: '修改密码',
@@ -238,6 +240,7 @@ export const zh = {
     finish1: '有机棉 T 恤 · 中性版型',
     finish2: '衣服颜色跟所选示例走。',
     preview: '预览提交 ↗',
+    designer: '打开 3D 设计器',
     demo: '演示工作台。不会发布真实商品。',
     doneEyebrow: '演示提交 / 预览完成',
     doneTitle: '这个点子穿在你身上很好看。',
@@ -412,6 +415,14 @@ export const zh = {
   },
   people: {
     empty: '这里还没有人。',
+  },
+  search: {
+    title: '搜索用户',
+    placeholder: '用户名、用户号或昵称',
+    submit: '搜索',
+    emptyKeyword: '请输入搜索关键词',
+    keywordMax: '搜索关键词最多 50 个字',
+    empty: '没有找到用户。',
   },
   user: {
     profile: '资料',

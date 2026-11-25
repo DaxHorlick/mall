@@ -107,7 +107,22 @@ export async function request<T>(path: string, init?: RequestOptions): Promise<T
 
   let payload: unknown
   try {
-    payload = await response.json()
+    const text = await response.text()
+    if (!text) {
+      payload = null
+    } else {
+      // int64 超过 JS 安全整数时按字符串保留，避免 user_id 丢精度。
+      const safe = text.replace(
+        /([:[,]\s*)(-?\d{16,})(?=\s*[,}\]])/g,
+        (match, prefix: string, digits: string) => {
+          const abs = digits.startsWith('-') ? digits.slice(1) : digits
+          const limit = '9007199254740991'
+          const tooBig = abs.length > limit.length || (abs.length === limit.length && abs > limit)
+          return tooBig ? `${prefix}"${digits}"` : match
+        },
+      )
+      payload = JSON.parse(safe)
+    }
   } catch {
     payload = null
   }

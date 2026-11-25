@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { shownDesignTitle, useCopy } from '../../i18n/index.ts'
 import { products } from '../../shop/products.ts'
 import { useShop } from '../../shop/store.ts'
@@ -57,6 +57,9 @@ export function StudioPage() {
           >
             {copy.studio.preview}
           </button>
+          <Link to="/designer" className="mt-4 inline-block text-sm font-semibold underline underline-offset-4">
+            {copy.studio.designer}
+          </Link>
           <p className="mt-4 text-[13px] text-[#696b61]">{copy.studio.demo}</p>
         </div>
       </div>
