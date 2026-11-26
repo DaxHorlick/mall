@@ -10,7 +10,12 @@ import { useLocale } from './i18n/locale.ts'
 import { router } from './router/index.tsx'
 
 export default function App() {
+  // 当前是中文还是英文，按钮和提示都跟着这份文案走。
+
   const locale = useLocale((state) => state.locale)
+
+  // 接口结果先放在内存里，同一份数据短时间内不重复请求。
+
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -40,6 +45,8 @@ export default function App() {
         },
       }),
   )
+
+  // 语言和按钮样式包在外面，里面按网址显示对应页面。
 
   return (
     <QueryClientProvider client={queryClient}>

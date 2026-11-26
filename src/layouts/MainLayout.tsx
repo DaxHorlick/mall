@@ -14,9 +14,13 @@ export function MainLayout() {
   const copy = useCopy()
   const status = useSession((s) => s.status)
 
+  // 换地址时滚回页面顶部。
+
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [pathname])
+
+  // 打开网站时，用浏览器里的令牌恢复登录。
 
   useEffect(() => {
     void bootstrapSession()
@@ -29,6 +33,8 @@ export function MainLayout() {
     pathname === '/forgot-password' ||
     pathname === '/reset-password'
 
+  // 没登录只能停在首页和登录相关页，已经登录就离开登录页。
+
   useEffect(() => {
     if (status === 'loading') return
     if (status === 'anonymous' && !openToGuests) {
@@ -39,6 +45,8 @@ export function MainLayout() {
       navigate('/profile', { replace: true })
     }
   }, [status, pathname, navigate, openToGuests])
+
+  // 退出登录后清掉接口缓存，避免下一个人看到上一份数据。
 
   useEffect(() => {
     if (status === 'anonymous') queryClient.clear()

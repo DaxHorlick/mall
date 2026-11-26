@@ -23,10 +23,15 @@ import { SearchPage } from '../pages/user/search.tsx'
 import { UserPage } from '../pages/user/index.tsx'
 
 export const router = createBrowserRouter([
+  // 做衣服的页面自己带顶栏和底栏，不走下面的商城外壳。
+
   { path: '/designer', element: <DesignerPage /> },
   { path: '/designer/:designId', element: <DesignerPage /> },
   { path: '/studio', element: <Navigate to="/designer" replace /> },
   { path: '/studio/submitted', element: <Navigate to="/designer" replace /> },
+
+  // 其余页面都包在商城外壳里：顶栏、当前页、底栏，并检查登录。
+
   {
     element: <MainLayout />,
     children: [

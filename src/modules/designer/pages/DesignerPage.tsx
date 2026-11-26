@@ -16,13 +16,19 @@ export function DesignerPage() {
   const status = useSession((state) => state.status)
   const [missing, setMissing] = useState(false)
 
+  // 设计器不走商城外壳，这里自己恢复登录。
+
   useEffect(() => {
     void bootstrapSession()
   }, [])
 
+  // 没登录就去登录页。
+
   useEffect(() => {
     if (status === 'anonymous') navigate('/login', { replace: true })
   }, [status, navigate])
+
+  // 地址里带了设计编号时，看这台浏览器有没有这份设计。
 
   useEffect(() => {
     if (!designId) {
