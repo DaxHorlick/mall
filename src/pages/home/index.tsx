@@ -35,7 +35,7 @@ export function HomePage() {
               {copy.home.explore}
             </Link>
             <Link
-              to="/studio"
+              to="/designer"
               className="inline-flex h-[54px] items-center rounded-lg border border-[#c5c6bc] bg-[#f7f6f0] px-6 text-[15px] font-semibold"
             >
               {copy.home.create}
@@ -178,7 +178,7 @@ export function HomePage() {
           <div className="mt-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <p className="text-[17px]">{copy.home.ideasBody}</p>
             <Link
-              to="/studio"
+              to="/designer"
               className="inline-flex h-[52px] shrink-0 items-center justify-center rounded-lg bg-[#191919] px-6 text-sm font-semibold text-[#f7f6f0]"
             >
               {copy.home.start}

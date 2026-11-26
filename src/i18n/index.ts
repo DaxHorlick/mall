@@ -14,12 +14,3 @@ export function useCopy(): Messages {
   const locale = useLocale((state) => state.locale)
   return locale === 'zh' ? zh : en
 }
-
-export function shownDesignTitle(slug: string, stored: string) {
-  if (!(slug in zh.catalog)) return stored
-  const key = slug as keyof typeof zh.catalog
-  const zhName = zh.catalog[key].name
-  const enName = en.catalog[key].name
-  if (stored !== zhName && stored !== enName) return stored
-  return useLocale.getState().locale === 'zh' ? zhName : enName
-}

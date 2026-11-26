@@ -41,7 +41,7 @@ export function CommunityPage() {
           <p className="mt-6 text-[17px] leading-relaxed text-[#696b61]">{copy.community.asideBody1}</p>
           <p className="mt-5 text-[17px] leading-relaxed text-[#696b61]">{copy.community.asideBody2}</p>
           <Link
-            to="/studio"
+            to="/designer"
             className="mt-auto inline-flex h-[52px] items-center rounded-lg bg-[#191919] px-5 text-sm font-semibold text-[#f7f6f0]"
           >
             {copy.community.bring}

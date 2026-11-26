@@ -16,7 +16,6 @@ export function SiteHeader() {
   const status = useSession((s) => s.status)
   const user = useSession((s) => s.user)
   const username = user?.username?.trim() || user?.nickname?.trim() || copy.common.user
-  const [openPath, setOpenPath] = useState<string | null>(null)
   const [passwordOpen, setPasswordOpen] = useState(false)
   const [oldPassword, setOldPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -25,12 +24,11 @@ export function SiteHeader() {
   const [passwordPending, setPasswordPending] = useState(false)
   const [leaving, setLeaving] = useState(false)
   const [logoutError, setLogoutError] = useState<string | null>(null)
-  const open = openPath === pathname
   const links = home
     ? [
         { to: '/explore', label: copy.nav.explore },
         { to: '/how-it-works', label: copy.nav.how },
-        { to: '/studio', label: copy.nav.creators },
+        { to: '/designer', label: copy.nav.creators },
       ]
     : [
         { to: '/explore', label: copy.nav.explore },
@@ -40,20 +38,18 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 bg-[#f7f6f0]">
-      <div
-        className={`mx-auto flex max-w-[1440px] items-center px-5 md:px-14 ${home ? 'h-[88px]' : 'h-24'}`}
-      >
+      <div className="mx-auto flex min-h-20 max-w-[1440px] flex-wrap items-center gap-x-8 gap-y-3 px-5 py-4 md:px-14">
         <NavLink to="/" className="text-[32px] font-black leading-none text-[#191919] md:text-[36px]">
           hlstudio
         </NavLink>
-        <nav className="ml-12 hidden items-center gap-10 text-sm font-medium text-[#191919] xl:flex">
+        <nav className="flex items-center gap-8 text-sm font-medium text-[#191919]">
           {links.map((link) => (
             <NavLink key={link.to} to={link.to}>
               {link.label}
             </NavLink>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-4 text-sm font-medium text-[#191919] xl:gap-8">
+        <div className="ml-auto flex items-center gap-4 text-sm font-medium text-[#191919] md:gap-8">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -71,10 +67,10 @@ export function SiteHeader() {
               EN
             </button>
           </div>
-          <div className="hidden items-center gap-8 xl:flex">
+          <div className="flex items-center gap-4 md:gap-8">
             <NavLink to="/bag">{copy.nav.bag}</NavLink>
             <NavLink
-              to="/studio"
+              to="/designer"
               className="inline-flex h-12 items-center rounded-lg bg-[#191919] px-4 text-sm font-semibold text-[#f7f6f0]"
             >
               {copy.nav.start}
@@ -100,9 +96,6 @@ export function SiteHeader() {
                   </NavLink>
                   <NavLink to="/search" className="block px-4 py-2.5 hover:bg-[#eceee3]">
                     {copy.nav.search}
-                  </NavLink>
-                  <NavLink to="/designer" className="block px-4 py-2.5 hover:bg-[#eceee3]">
-                    {copy.nav.designer}
                   </NavLink>
                   <NavLink to="/profile/addresses" className="block px-4 py-2.5 hover:bg-[#eceee3]">
                     {copy.nav.addresses}
@@ -156,31 +149,7 @@ export function SiteHeader() {
             <NavLink to="/login">{copy.nav.signIn}</NavLink>
           )}
         </div>
-        <button
-          type="button"
-          className="ml-4 text-sm font-medium text-[#191919] xl:hidden"
-          aria-expanded={open}
-          onClick={() => setOpenPath(open ? null : pathname)}
-        >
-          {open ? copy.common.close : copy.common.menu}
-        </button>
       </div>
-      {open ? (
-        <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-5 pb-5 text-sm font-medium text-[#191919] md:px-14 xl:hidden">
-          {links.map((link) => (
-            <NavLink key={link.to} to={link.to}>
-              {link.label}
-            </NavLink>
-          ))}
-          <NavLink to="/bag">{copy.nav.bag}</NavLink>
-          <NavLink
-            to="/studio"
-            className="inline-flex h-12 items-center justify-center rounded-lg bg-[#191919] px-4 text-sm font-semibold text-[#f7f6f0]"
-          >
-            {copy.nav.start}
-          </NavLink>
-        </div>
-      ) : null}
       <div className="mx-auto max-w-[1440px] px-5 md:px-14">
         <div className="h-px bg-[#ddded4]" />
       </div>

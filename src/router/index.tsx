@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { MainLayout } from '../layouts/MainLayout.tsx'
 import { DesignerPage } from '../modules/designer/pages/DesignerPage.tsx'
 import { AccountPage } from '../pages/account/index.tsx'
@@ -18,19 +18,19 @@ import { OrderPage } from '../pages/order/index.tsx'
 import { ProductPage } from '../pages/product/index.tsx'
 import { RegisterPage } from '../pages/register/index.tsx'
 import { ResetPasswordPage } from '../pages/reset-password/index.tsx'
-import { StudioSubmittedPage } from '../pages/studio-submitted/index.tsx'
-import { StudioPage } from '../pages/studio/index.tsx'
 import { PeoplePage } from '../pages/user/people.tsx'
 import { SearchPage } from '../pages/user/search.tsx'
 import { UserPage } from '../pages/user/index.tsx'
 
 export const router = createBrowserRouter([
+  { path: '/designer', element: <DesignerPage /> },
+  { path: '/designer/:designId', element: <DesignerPage /> },
+  { path: '/studio', element: <Navigate to="/designer" replace /> },
+  { path: '/studio/submitted', element: <Navigate to="/designer" replace /> },
   {
     element: <MainLayout />,
     children: [
       { path: '/', element: <HomePage /> },
-      { path: '/designer', element: <DesignerPage /> },
-      { path: '/designer/:designId', element: <DesignerPage /> },
       { path: '/explore', element: <ExplorePage /> },
       { path: '/products/:slug', element: <ProductPage /> },
       { path: '/how-it-works', element: <HowItWorksPage /> },
@@ -38,8 +38,6 @@ export const router = createBrowserRouter([
       { path: '/bag', element: <BagPage /> },
       { path: '/checkout', element: <CheckoutPage /> },
       { path: '/order', element: <OrderPage /> },
-      { path: '/studio', element: <StudioPage /> },
-      { path: '/studio/submitted', element: <StudioSubmittedPage /> },
       { path: '/login', element: <LoginPage /> },
       { path: '/register', element: <RegisterPage /> },
       { path: '/forgot-password', element: <ForgotPasswordPage /> },

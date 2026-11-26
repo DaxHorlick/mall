@@ -24,7 +24,7 @@ export function SiteFooter() {
           <div>
             <p className="text-[11px] font-bold tracking-normal text-[#929788]">{copy.footer.forCreators}</p>
             <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[13px] font-medium">
-              <NavLink to="/studio">{copy.footer.start}</NavLink>
+              <NavLink to="/designer">{copy.footer.start}</NavLink>
               <NavLink to="/how-it-works">{copy.footer.how}</NavLink>
             </div>
           </div>

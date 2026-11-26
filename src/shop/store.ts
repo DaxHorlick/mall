@@ -15,22 +15,16 @@ type ShopState = {
   lines: ShopLine[]
   votes: string[]
   order: ShopOrder | null
-  studioSlug: string
-  studioTitle: string
   addLine: (slug: string) => void
   removeLine: (slug: string) => void
   toggleVote: (slug: string) => void
   placeOrder: () => void
-  setStudio: (slug: string, title: string) => void
-  setStudioTitle: (title: string) => void
 }
 
 export const useShop = create<ShopState>((set) => ({
   lines: [],
   votes: [],
   order: null,
-  studioSlug: 'a-little-outside-the-lines',
-  studioTitle: 'A little outside the lines',
   addLine: (slug) =>
     set((state) => {
       if (state.lines.some((line) => line.slug === slug)) return state
@@ -56,6 +50,4 @@ export const useShop = create<ShopState>((set) => ({
         lines: [],
       }
     }),
-  setStudio: (slug, title) => set({ studioSlug: slug, studioTitle: title }),
-  setStudioTitle: (title) => set({ studioTitle: title }),
 }))
