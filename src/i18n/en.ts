@@ -261,6 +261,12 @@ export const en: Messages = {
     back: '← Back to studio',
     community: 'Explore the community ↗',
   },
+  editor: {
+    design: 'Design',
+    pattern: 'Pattern',
+    upload: 'Upload a pattern',
+    empty: 'No pattern yet',
+  },
   layout: {
     restoring: 'Restoring your session',
     openingAccount: 'Opening your account',

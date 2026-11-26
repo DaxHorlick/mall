@@ -33,6 +33,7 @@ type EditorState = {
   setNotice: (message: string | null) => void
   setPrintMessage: (message: string) => void
   setModelFile: (file: File) => void
+  setGarment: (url: string, name: string) => void
   resetDefaultModel: () => void
   setActiveRegion: (region: DesignRegionId) => void
   addLayer: (input: { name: string; imageUrl: string; region?: DesignRegionId }) => void
@@ -100,6 +101,24 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       overrides: {},
       layers: [],
       selectedLayerId: null,
+      printMessage: '正在读取模型…',
+      modelError: null,
+      notice: null,
+      view: { id: 'reset', nonce: get().view.nonce + 1 },
+    })
+  },
+
+  /** 换成选中款式的模型，图案留在衣服上。 */
+  setGarment: (url, name) => {
+    if (get().modelUrl === url && get().modelName === name) return
+    const previous = get().modelUrl
+    if (previous.startsWith('blob:')) URL.revokeObjectURL(previous)
+    set({
+      modelUrl: url,
+      modelName: name,
+      report: null,
+      frame: null,
+      overrides: {},
       printMessage: '正在读取模型…',
       modelError: null,
       notice: null,

@@ -25,12 +25,12 @@ import { SearchPage } from '../pages/user/search.tsx'
 import { UserPage } from '../pages/user/index.tsx'
 
 export const router = createBrowserRouter([
-  { path: '/designer', element: <DesignerPage /> },
-  { path: '/designer/:designId', element: <DesignerPage /> },
   {
     element: <MainLayout />,
     children: [
       { path: '/', element: <HomePage /> },
+      { path: '/designer', element: <DesignerPage /> },
+      { path: '/designer/:designId', element: <DesignerPage /> },
       { path: '/explore', element: <ExplorePage /> },
       { path: '/products/:slug', element: <ProductPage /> },
       { path: '/how-it-works', element: <HowItWorksPage /> },

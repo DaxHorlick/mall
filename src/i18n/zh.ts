@@ -251,6 +251,12 @@ export const zh = {
     back: '← 回到工作室',
     community: '去社区看看 ↗',
   },
+  editor: {
+    design: '设计',
+    pattern: '图案',
+    upload: '上传图案',
+    empty: '还没有图案',
+  },
   layout: {
     restoring: '正在恢复登录状态',
     openingAccount: '正在打开你的账号',
