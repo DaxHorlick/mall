@@ -1,10 +1,12 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { GarmentBoard } from './GarmentBoard.tsx'
-import { getDesign, saveDesign } from '../../services/design.ts'
-import { useEditorStore } from '../../stores/editorStore.ts'
-import { readLibraryImage } from '../../utils/loadImage.ts'
-import { DESIGN_REGIONS, GARMENT_COLORS, GARMENT_SIDES, GARMENT_STYLES } from '../../types/index.ts'
+import { getErrorMessage } from '../../api/client.ts'
+import { deleteLibraryImage, fetchLibrary, uploadLibraryImage, type LibraryImage } from '../../designer/api.ts'
+import { listClothingColors, listClothingStyles, type ClothingColor, type ClothingStyle } from '../../designer/catalog.ts'
+import { getDesign, saveDesign } from '../../designer/design.ts'
+import { useEditorStore } from '../../designer/store.ts'
+import { DESIGN_REGIONS, GARMENT_SIDES, styleRegions } from '../../designer/types.ts'
+import { GarmentBoard } from './board.tsx'
 
 const quiet = 'rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm font-medium text-[#111827]'
 
@@ -12,15 +14,23 @@ const quiet = 'rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm fon
 export function EditorLayout() {
   const patternInput = useRef<HTMLInputElement>(null)
   const savedId = useRef<string | null>(null)
+  const libraryTouched = useRef(false)
+  const [styles, setStyles] = useState<ClothingStyle[]>([])
+  const [colors, setColors] = useState<ClothingColor[]>([])
+  const [catalogError, setCatalogError] = useState<string | null>(null)
+  const [library, setLibrary] = useState<LibraryImage[]>([])
+  const [libraryTotal, setLibraryTotal] = useState(0)
+  const [libraryPage, setLibraryPage] = useState(0)
+  const [libraryPages, setLibraryPages] = useState(0)
+  const [libraryReady, setLibraryReady] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
   const { designId } = useParams()
   const navigate = useNavigate()
   const garmentColor = useEditorStore((state) => state.garmentColor)
   const setGarmentColor = useEditorStore((state) => state.setGarmentColor)
   const garmentStyle = useEditorStore((state) => state.garmentStyle)
   const setGarmentStyle = useEditorStore((state) => state.setGarmentStyle)
-  const library = useEditorStore((state) => state.library)
-  const addToLibrary = useEditorStore((state) => state.addToLibrary)
-  const removeFromLibrary = useEditorStore((state) => state.removeFromLibrary)
   const side = useEditorStore((state) => state.side)
   const setSide = useEditorStore((state) => state.setSide)
   const activeRegion = useEditorStore((state) => state.activeRegion)
@@ -42,11 +52,11 @@ export function EditorLayout() {
   const canRedo = useEditorStore((state) => state.future.length > 0)
   const sideLayers = layers.filter((layer) => layer.side === side)
   const layer = layers.find((item) => item.id === selectedLayerId && item.side === side) ?? null
-  const colorLabel = GARMENT_COLORS.find((item) => item.value === garmentColor)?.label ?? '自定义'
-  const styleLabel = GARMENT_STYLES.find((item) => item.id === garmentStyle)?.label ?? '短袖 T 恤'
-  const styleRegions = GARMENT_STYLES.find((item) => item.id === garmentStyle)?.regions ?? ['body']
+  const colorLabel = colors.find((item) => item.hex_code.toLowerCase() === garmentColor.toLowerCase())?.name ?? '自定义'
+  const styleLabel = styles.find((item) => item.code === garmentStyle)?.name ?? '衣服'
+  const allowedRegions = styleRegions(garmentStyle)
   const sideLabel = GARMENT_SIDES.find((item) => item.id === side)?.label ?? '正面'
-  const textColorLabel = GARMENT_COLORS.find((item) => item.value === layer?.textColor)?.label ?? '自定义'
+  const textColorLabel = colors.find((item) => item.hex_code.toLowerCase() === (layer?.textColor ?? '').toLowerCase())?.name ?? '自定义'
 
   useEffect(() => {
     if (!designId || savedId.current === designId) return
@@ -55,6 +65,65 @@ export function EditorLayout() {
     savedId.current = designId
     applyDesign(draft.saved)
   }, [applyDesign, designId])
+
+  useEffect(() => {
+    let gone = false
+
+    // 向服务器要款式和颜色。没有打开旧设计时，选中项不在列表里就改用第一项。
+
+    void Promise.all([listClothingStyles(), listClothingColors()])
+      .then(([styleRows, colorRows]) => {
+        if (gone) return
+        const nextStyles = Array.isArray(styleRows) ? styleRows : []
+        const nextColors = Array.isArray(colorRows) ? colorRows : []
+        setStyles(nextStyles)
+        setColors(nextColors)
+        setCatalogError(null)
+        if (designId && getDesign(designId)?.saved) return
+        const state = useEditorStore.getState()
+        const styleKnown = nextStyles.some((item) => item.code === state.garmentStyle)
+        const colorKnown = nextColors.some((item) => item.hex_code.toLowerCase() === state.garmentColor.toLowerCase())
+        if (styleKnown && colorKnown) return
+        useEditorStore.setState({
+          garmentStyle: styleKnown ? state.garmentStyle : (nextStyles[0]?.code ?? state.garmentStyle),
+          garmentColor: colorKnown ? state.garmentColor : (nextColors[0]?.hex_code ?? state.garmentColor),
+        })
+      })
+      .catch((error: unknown) => {
+        if (gone) return
+        setCatalogError(getErrorMessage(error))
+      })
+
+    return () => {
+      gone = true
+    }
+  }, [designId])
+
+  useEffect(() => {
+    let gone = false
+
+    // 打开设计器时读取当前用户图库的第一页。
+
+    void fetchLibrary({ page: 1 })
+      .then((page) => {
+        if (gone || libraryTouched.current) return
+        const list = Array.isArray(page?.list) ? page.list : []
+        setLibrary(list)
+        setLibraryTotal(typeof page?.total === 'number' ? page.total : list.length)
+        setLibraryPage(typeof page?.page === 'number' ? page.page : 1)
+        setLibraryPages(typeof page?.total_pages === 'number' ? page.total_pages : 1)
+        setLibraryReady(true)
+      })
+      .catch((error: unknown) => {
+        if (gone) return
+        setLibraryReady(true)
+        setNotice(getErrorMessage(error))
+      })
+
+    return () => {
+      gone = true
+    }
+  }, [setNotice])
 
   return (
     <div className="flex h-full min-h-0 bg-[#eef0f3] p-3 md:p-5">
@@ -74,15 +143,17 @@ export function EditorLayout() {
               <h2 className="text-[15px] font-semibold text-[#111827]">衣服款式</h2>
               <span className="text-sm text-[#6b7280]">{styleLabel}</span>
             </div>
+            {catalogError ? <p className="text-sm text-[#9a3412]">{catalogError}</p> : null}
+            {styles.length === 0 && !catalogError ? <p className="text-sm text-[#6b7280]">正在加载款式。</p> : null}
             <div className="grid grid-cols-3 gap-2">
-              {GARMENT_STYLES.map((item) => (
+              {styles.map((item) => (
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setGarmentStyle(item.id)}
-                  className={`rounded-lg px-2 py-3 text-sm ${garmentStyle === item.id ? 'border-2 border-[#111827] font-semibold' : 'border border-[#e5e7eb] text-[#6b7280]'}`}
+                  onClick={() => setGarmentStyle(item.code)}
+                  className={`rounded-lg px-2 py-3 text-sm ${garmentStyle === item.code ? 'border-2 border-[#111827] font-semibold' : 'border border-[#e5e7eb] text-[#6b7280]'}`}
                 >
-                  {item.label}
+                  {item.name}
                 </button>
               ))}
             </div>
@@ -93,15 +164,16 @@ export function EditorLayout() {
               <h2 className="text-[15px] font-semibold text-[#111827]">衣服颜色</h2>
               <span className="text-sm text-[#6b7280]">{colorLabel}</span>
             </div>
+            {colors.length === 0 && !catalogError ? <p className="text-sm text-[#6b7280]">正在加载颜色。</p> : null}
             <div className="flex flex-wrap gap-3">
-              {GARMENT_COLORS.map((color) => (
+              {colors.map((color) => (
                 <button
-                  key={color.value}
+                  key={color.id}
                   type="button"
-                  aria-label={color.label}
-                  className={`h-9 w-9 rounded-full border border-[#e5e7eb] ${garmentColor === color.value ? 'ring-2 ring-[#111827] ring-offset-2' : ''}`}
-                  style={{ background: color.value }}
-                  onClick={() => setGarmentColor(color.value)}
+                  aria-label={color.name}
+                  className={`h-9 w-9 rounded-full border border-[#e5e7eb] ${garmentColor.toLowerCase() === color.hex_code.toLowerCase() ? 'ring-2 ring-[#111827] ring-offset-2' : ''}`}
+                  style={{ background: color.hex_code }}
+                  onClick={() => setGarmentColor(color.hex_code)}
                 />
               ))}
             </div>
@@ -110,10 +182,10 @@ export function EditorLayout() {
           <section className="border-b border-[#f0f1f4] px-6 py-6">
             <div className="mb-4 flex items-baseline justify-between gap-3">
               <h2 className="text-[15px] font-semibold text-[#111827]">我的图库</h2>
-              <span className="text-sm text-[#6b7280]">{library.length ? `${library.length} 张` : '空'}</span>
+              <span className="text-sm text-[#6b7280]">{libraryReady ? (libraryTotal ? `${libraryTotal} 张` : '空') : '正在加载'}</span>
             </div>
-            <button type="button" className={`${quiet} w-full`} onClick={() => patternInput.current?.click()}>
-              上传图片
+            <button type="button" className={`${quiet} w-full disabled:opacity-60`} disabled={uploading} onClick={() => patternInput.current?.click()}>
+              {uploading ? '正在上传' : '上传图片'}
             </button>
             <input
               ref={patternInput}
@@ -121,18 +193,41 @@ export function EditorLayout() {
               type="file"
               accept="image/png,image/jpeg,image/webp"
               onChange={(event) => {
+                // 读出选中的文件，并清空输入，方便再次选同一张。
+
                 const file = event.target.files?.[0]
                 event.target.value = ''
                 if (!file) return
+
+                // 类型和大小先在页面上拦住，文案和接口一致。
+
                 const allowed = ['image/png', 'image/jpeg', 'image/webp']
                 if (!allowed.includes(file.type)) {
                   setNotice('请上传 PNG、JPG 或 WebP 图片。')
                   return
                 }
+                if (file.size === 0) {
+                  setNotice('请选择图片。')
+                  return
+                }
+                if (file.size > 8 * 1024 * 1024) {
+                  setNotice('图片不能超过 8MB。')
+                  return
+                }
 
-                void readLibraryImage(file)
-                  .then((url) => addToLibrary({ id: crypto.randomUUID(), name: file.name, url }))
-                  .catch(() => setNotice('图片读取失败。'))
+                // 上传到当前用户的图库，成功后插到列表最前面。
+
+                setUploading(true)
+                libraryTouched.current = true
+                void uploadLibraryImage(file)
+                  .then((image) => {
+                    setLibrary((current) => [image, ...current.filter((item) => item.id !== image.id)])
+                    setLibraryTotal((total) => total + 1)
+                    setLibraryReady(true)
+                    setNotice(null)
+                  })
+                  .catch((error: unknown) => setNotice(getErrorMessage(error)))
+                  .finally(() => setUploading(false))
               }}
             />
             {library.length ? (
@@ -142,15 +237,59 @@ export function EditorLayout() {
                     <button type="button" className="block w-full overflow-hidden rounded-lg border border-[#e5e7eb]" aria-label={item.name} onClick={() => addLayer({ kind: 'image', name: item.name, imageUrl: item.url, region: activeRegion })}>
                       <img src={item.url} alt="" className="aspect-square w-full object-cover" />
                     </button>
-                    <button type="button" className="absolute right-1 top-1 rounded bg-white/90 px-1.5 py-0.5 text-[10px] text-[#6b7280]" onClick={() => removeFromLibrary(item.id)}>
+                    <button
+                      type="button"
+                      className="absolute right-1 top-1 rounded bg-white/90 px-1.5 py-0.5 text-[10px] text-[#6b7280] disabled:opacity-60"
+                      disabled={deletingId === item.id}
+                      onClick={() => {
+                        // 只从用户图库去掉这一张，衣服上已经贴好的图层不动。
+
+                        setDeletingId(item.id)
+                        libraryTouched.current = true
+                        void deleteLibraryImage(item.id)
+                          .then(() => {
+                            setLibrary((current) => current.filter((image) => image.id !== item.id))
+                            setLibraryTotal((total) => Math.max(0, total - 1))
+                          })
+                          .catch((error: unknown) => setNotice(getErrorMessage(error)))
+                          .finally(() => setDeletingId((current) => (current === item.id ? null : current)))
+                      }}
+                    >
                       删除
                     </button>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="mt-3 text-sm text-[#6b7280]">上传后点图片，贴到当前区域。图片保存在这台浏览器里。</p>
+              <p className="mt-3 text-sm text-[#6b7280]">{libraryReady ? '上传后点图片，贴到当前区域。' : '正在加载图库。'}</p>
             )}
+            {libraryPage < libraryPages ? (
+              <button
+                type="button"
+                className={`${quiet} mt-3 w-full`}
+                onClick={() => {
+                  const next = libraryPage + 1
+
+                  // 下一页接到当前列表后面。
+
+                  libraryTouched.current = true
+                  void fetchLibrary({ page: next })
+                    .then((page) => {
+                      const list = Array.isArray(page?.list) ? page.list : []
+                      setLibrary((current) => {
+                        const seen = new Set(current.map((image) => image.id))
+                        return [...current, ...list.filter((image) => !seen.has(image.id))]
+                      })
+                      setLibraryPage(typeof page?.page === 'number' ? page.page : next)
+                      setLibraryPages(typeof page?.total_pages === 'number' ? page.total_pages : libraryPages)
+                      if (typeof page?.total === 'number') setLibraryTotal(page.total)
+                    })
+                    .catch((error: unknown) => setNotice(getErrorMessage(error)))
+                }}
+              >
+                加载更多
+              </button>
+            ) : null}
           </section>
 
           {layer?.kind === 'text' ? (
@@ -160,14 +299,14 @@ export function EditorLayout() {
                 <span className="text-sm text-[#6b7280]">{textColorLabel}</span>
               </div>
               <div className="flex flex-wrap gap-3">
-                {GARMENT_COLORS.map((color) => (
+                {colors.map((color) => (
                   <button
-                    key={color.value}
+                    key={color.id}
                     type="button"
-                    aria-label={color.label}
-                    className={`h-9 w-9 rounded-full border border-[#e5e7eb] ${layer.textColor === color.value ? 'ring-2 ring-[#111827] ring-offset-2' : ''}`}
-                    style={{ background: color.value }}
-                    onClick={() => updateLayer(layer.id, { textColor: color.value }, true)}
+                    aria-label={color.name}
+                    className={`h-9 w-9 rounded-full border border-[#e5e7eb] ${(layer.textColor ?? '').toLowerCase() === color.hex_code.toLowerCase() ? 'ring-2 ring-[#111827] ring-offset-2' : ''}`}
+                    style={{ background: color.hex_code }}
+                    onClick={() => updateLayer(layer.id, { textColor: color.hex_code }, true)}
                   />
                 ))}
               </div>
@@ -285,7 +424,7 @@ export function EditorLayout() {
                 ))}
               </div>
               <div className="flex gap-1 rounded-xl bg-white/95 p-1 shadow-[0_8px_24px_rgba(17,24,39,0.08)]">
-                {DESIGN_REGIONS.filter((region) => styleRegions.includes(region.id)).map((region) => {
+                {DESIGN_REGIONS.filter((region) => allowedRegions.includes(region.id)).map((region) => {
                   const selected = (layer?.region ?? activeRegion) === region.id
                   return (
                     <button

@@ -1,6 +1,5 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 import { MainLayout } from '../layouts/MainLayout.tsx'
-import { DesignerPage } from '../modules/designer/pages/DesignerPage.tsx'
 import { AccountPage } from '../pages/account/index.tsx'
 import { AddressFormPage } from '../pages/account/address-form.tsx'
 import { AddressesPage } from '../pages/account/addresses.tsx'
@@ -8,6 +7,7 @@ import { EditProfilePage } from '../pages/account/edit.tsx'
 import { BagPage } from '../pages/bag/index.tsx'
 import { CheckoutPage } from '../pages/checkout/index.tsx'
 import { CommunityPage } from '../pages/community/index.tsx'
+import { DesignerPage } from '../pages/designer/index.tsx'
 import { ExplorePage } from '../pages/explore/index.tsx'
 import { ForgotPasswordPage } from '../pages/forgot-password/index.tsx'
 import { HomePage } from '../pages/home/index.tsx'
@@ -23,19 +23,14 @@ import { SearchPage } from '../pages/user/search.tsx'
 import { UserPage } from '../pages/user/index.tsx'
 
 export const router = createBrowserRouter([
-  // 做衣服的页面自己带顶栏和底栏，不走下面的商城外壳。
-
-  { path: '/designer', element: <DesignerPage /> },
-  { path: '/designer/:designId', element: <DesignerPage /> },
-  { path: '/studio', element: <Navigate to="/designer" replace /> },
-  { path: '/studio/submitted', element: <Navigate to="/designer" replace /> },
-
-  // 其余页面都包在商城外壳里：顶栏、当前页、底栏，并检查登录。
+  // 页面都包在商城外壳里：顶栏、当前页、底栏，并检查登录。
 
   {
     element: <MainLayout />,
     children: [
       { path: '/', element: <HomePage /> },
+      { path: '/designer', element: <DesignerPage /> },
+      { path: '/designer/:designId', element: <DesignerPage /> },
       { path: '/explore', element: <ExplorePage /> },
       { path: '/products/:slug', element: <ProductPage /> },
       { path: '/how-it-works', element: <HowItWorksPage /> },

@@ -1,9 +1,9 @@
-import type { GarmentSide, GarmentStyleId } from '../types/index.ts'
+import type { GarmentSide } from './types.ts'
 
-/** 按款式画平面衣服，领口挖空。 */
+/** 按款式画平面衣服，领口挖空。圆领卫衣和 T 恤都走圆领。 */
 export function drawGarment(
   context: CanvasRenderingContext2D,
-  style: GarmentStyleId,
+  style: string,
   side: GarmentSide,
   color: string,
 ) {

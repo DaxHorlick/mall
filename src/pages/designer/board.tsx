@@ -1,15 +1,15 @@
 import { useEffect, useRef } from 'react'
-import { drawGarment } from '../../utils/drawGarment.ts'
-import { loadImage } from '../../utils/loadImage.ts'
-import { useEditorStore } from '../../stores/editorStore.ts'
+import { drawGarment } from '../../designer/draw.ts'
+import { loadImage } from '../../designer/image.ts'
+import { useEditorStore } from '../../designer/store.ts'
 import {
   BOARD_HEIGHT,
   BOARD_WIDTH,
   DESIGN_REGIONS,
-  GARMENT_STYLES,
-  REGION_BOX,
+  styleBox,
+  styleRegions,
   type DesignLayer,
-} from '../../types/index.ts'
+} from '../../designer/types.ts'
 
 /** 平面衣服画布：画模板、图案和文字，并在画布上拖动。 */
 export function GarmentBoard() {
@@ -60,9 +60,9 @@ export function GarmentBoard() {
 
       // 这一款能印的区域。
 
-      const regionIds = GARMENT_STYLES.find((item) => item.id === garmentStyle)?.regions ?? []
+      const regionIds = styleRegions(garmentStyle)
       for (const region of DESIGN_REGIONS.filter((item) => regionIds.includes(item.id))) {
-        const box = REGION_BOX[garmentStyle][region.id]
+        const box = styleBox(garmentStyle, region.id)
         context.save()
         context.setLineDash([7, 6])
         context.strokeStyle = region.id === activeRegion ? '#1c1e21' : 'rgba(28, 30, 33, 0.28)'

@@ -1,4 +1,4 @@
-import type { DesignLayer, GarmentStyleId } from '../types/index.ts'
+import type { DesignLayer, GarmentStyleId } from './types.ts'
 
 export type SavedDesign = {
   layers: DesignLayer[]

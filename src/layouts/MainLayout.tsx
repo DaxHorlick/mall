@@ -59,7 +59,7 @@ export function MainLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-[#f7f6f0] text-[#191919]">
       <SiteHeader />
-      <main className="flex-1">
+      <main className="flex min-h-0 flex-1 flex-col">
         {status === 'loading' || redirecting ? (
           <p className="mx-auto max-w-[1440px] px-5 py-16 text-sm text-[#696b61] md:px-14">
             {status === 'loading'

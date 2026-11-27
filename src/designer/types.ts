@@ -2,13 +2,7 @@ export type GarmentSide = 'front' | 'back'
 
 export type DesignRegionId = 'body' | 'sleeveLeft' | 'sleeveRight'
 
-export type GarmentStyleId = 'tee' | 'hoodie' | 'tank'
-
-export type LibraryImage = {
-  id: string
-  name: string
-  url: string
-}
+export type GarmentStyleId = string
 
 export type LayerKind = 'image' | 'text'
 
@@ -46,31 +40,16 @@ export const GARMENT_SIDES: { id: GarmentSide; label: string }[] = [
   { id: 'back', label: '背面' },
 ]
 
-export const GARMENT_STYLES: { id: GarmentStyleId; label: string; regions: DesignRegionId[] }[] = [
-  { id: 'tee', label: '短袖 T 恤', regions: ['body', 'sleeveLeft', 'sleeveRight'] },
-  { id: 'hoodie', label: '连帽衫', regions: ['body', 'sleeveLeft', 'sleeveRight'] },
-  { id: 'tank', label: '背心', regions: ['body'] },
-]
+/** 接口款式里，只有背心没有袖子。 */
+export function styleRegions(code: string): DesignRegionId[] {
+  if (code === 'tank') return ['body']
+  return ['body', 'sleeveLeft', 'sleeveRight']
+}
 
-export const GARMENT_COLORS: { value: string; label: string }[] = [
-  { value: '#f7f4ee', label: '米白' },
-  { value: '#111111', label: '黑色' },
-  { value: '#4b5563', label: '深灰' },
-  { value: '#1e3a5f', label: '藏青' },
-  { value: '#d1d5db', label: '浅灰' },
-  { value: '#e7e5e4', label: '米色' },
-  { value: '#b91c1c', label: '红色' },
-  { value: '#2563eb', label: '蓝色' },
-  { value: '#0f766e', label: '青色' },
-  { value: '#4d7c0f', label: '橄榄绿' },
-  { value: '#f9a8d4', label: '粉色' },
-  { value: '#eab308', label: '黄色' },
-  { value: '#65a30d', label: '绿色' },
-  { value: '#9f1239', label: '酒红' },
-]
+type Silhouette = 'tee' | 'hoodie' | 'tank'
 
-/** 每种款式的区域占画布的比例，添加图案时落在区域中心。 */
-export const REGION_BOX: Record<GarmentStyleId, Record<DesignRegionId, RegionBox>> = {
+/** 每种平面轮廓的区域占画布的比例，添加图案时落在区域中心。 */
+export const REGION_BOX: Record<Silhouette, Record<DesignRegionId, RegionBox>> = {
   tee: {
     body: { x: 0.26, y: 0.38, w: 0.48, h: 0.52 },
     sleeveLeft: { x: 0.05, y: 0.24, w: 0.22, h: 0.18 },
@@ -86,6 +65,12 @@ export const REGION_BOX: Record<GarmentStyleId, Record<DesignRegionId, RegionBox
     sleeveLeft: { x: 0.24, y: 0.28, w: 0.1, h: 0.12 },
     sleeveRight: { x: 0.66, y: 0.28, w: 0.1, h: 0.12 },
   },
+}
+
+/** T 恤和圆领卫衣用圆领轮廓，卫衣用连帽轮廓。 */
+export function styleBox(code: string, region: DesignRegionId) {
+  const key: Silhouette = code === 'hoodie' ? 'hoodie' : code === 'tank' ? 'tank' : 'tee'
+  return REGION_BOX[key][region] ?? REGION_BOX[key].body
 }
 
 export const BOARD_WIDTH = 800

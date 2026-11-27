@@ -1,16 +1,13 @@
 import { create } from 'zustand'
 import {
-  GARMENT_STYLES,
-  REGION_BOX,
+  styleBox,
+  styleRegions,
   type DesignLayer,
   type DesignRegionId,
   type GarmentSide,
   type GarmentStyleId,
   type LayerKind,
-  type LibraryImage,
-} from '../types/index.ts'
-
-const libraryKey = 'dezajn.design-library'
+} from './types.ts'
 
 type Snapshot = {
   layers: DesignLayer[]
@@ -21,7 +18,6 @@ type Snapshot = {
 type EditorState = {
   garmentColor: string
   garmentStyle: GarmentStyleId
-  library: LibraryImage[]
   side: GarmentSide
   activeRegion: DesignRegionId
   layers: DesignLayer[]
@@ -34,8 +30,6 @@ type EditorState = {
   setActiveRegion: (region: DesignRegionId) => void
   setGarmentColor: (color: string) => void
   setGarmentStyle: (style: GarmentStyleId) => void
-  addToLibrary: (image: LibraryImage) => void
-  removeFromLibrary: (id: string) => void
   addLayer: (input: {
     kind: LayerKind
     name: string
@@ -59,24 +53,8 @@ function snapshot(state: { layers: DesignLayer[]; garmentColor: string; garmentS
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
-  garmentColor: '#f7f4ee',
-  garmentStyle: 'tee',
-  library: (() => {
-    try {
-      const raw = localStorage.getItem(libraryKey)
-      const parsed: unknown = raw ? JSON.parse(raw) : []
-      if (!Array.isArray(parsed)) return []
-      return parsed
-        .filter((item): item is LibraryImage => {
-          if (!item || typeof item !== 'object') return false
-          const image = item as LibraryImage
-          return typeof image.id === 'string' && typeof image.name === 'string' && typeof image.url === 'string' && image.url.startsWith('data:image/')
-        })
-        .slice(0, 24)
-    } catch {
-      return []
-    }
-  })(),
+  garmentColor: '#FFFFFF',
+  garmentStyle: 'tshirt',
   side: 'front',
   activeRegion: 'body',
   layers: [],
@@ -115,7 +93,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   /** 换款式，并记入撤销。背心没有袖子，区域回到衣身。 */
   setGarmentStyle: (style) => {
     const state = get()
-    const allowed = GARMENT_STYLES.find((item) => item.id === style)?.regions ?? ['body']
+    const allowed = styleRegions(style)
 
     set({
       past: [...state.past, snapshot(state)].slice(-40),
@@ -125,33 +103,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     })
   },
 
-  /** 图片写入这台浏览器的图库，最多留 24 张。 */
-  addToLibrary: (image) => {
-    const library = [image, ...get().library.filter((item) => item.id !== image.id)].slice(0, 24)
-    try {
-      localStorage.setItem(libraryKey, JSON.stringify(library))
-      set({ library, notice: null })
-    } catch {
-      set({ notice: '图库空间不够，请先删掉几张图片。' })
-    }
-  },
-
-  /** 从图库移除，已经贴到衣服上的图案还在。 */
-  removeFromLibrary: (id) => {
-    const library = get().library.filter((item) => item.id !== id)
-    try {
-      localStorage.setItem(libraryKey, JSON.stringify(library))
-    } catch {
-      // 删掉后写不回去时，页面上先去掉这一张。
-    }
-    set({ library })
-  },
-
   /** 新图案或文字落在当前款式的区域中心。 */
   addLayer: ({ kind, name, imageUrl, text, textColor, region }) => {
     const state = get()
     const placed = region ?? state.activeRegion
-    const box = REGION_BOX[state.garmentStyle][placed] ?? REGION_BOX[state.garmentStyle].body
+    const box = styleBox(state.garmentStyle, placed)
     const id = crypto.randomUUID()
     const layer: DesignLayer = {
       id,
@@ -271,7 +227,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   /** 打开一份已保存的设计，清掉撤销记录。 */
   applyDesign: (saved) => {
-    const allowed = GARMENT_STYLES.find((item) => item.id === saved.garmentStyle)?.regions ?? ['body']
+    const allowed = styleRegions(saved.garmentStyle)
 
     set({
       layers: saved.layers,
